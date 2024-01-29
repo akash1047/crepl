@@ -1,4 +1,3 @@
-workspace = { members = ["crepl"] }
 [package]
 name = "crepl"
 version = "0.1.0"
