@@ -1,5 +1,5 @@
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum Tag {
     ILLEGAL,
     EOF,
@@ -11,6 +11,7 @@ pub enum Tag {
     ASSIGN,    // =
     PLUS,      // +
     PLUS_PLUS, // ++
+    LESS_THAN, // <
 
     SEMICOLON, // ;
     LPAREN,    // (

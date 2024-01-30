@@ -1,11 +1,14 @@
+use colorful::Colorful;
 use lexer::Lexer;
 use rustyline::error::ReadlineError;
 use token::Tag;
 
-use crate::colors::color_it;
+use crate::colors;
 
 pub fn start() {
     let mut rl = rustyline::DefaultEditor::new().unwrap();
+
+    let pencil = colors::one_dark();
 
     loop {
         match rl.readline("> ") {
@@ -14,7 +17,11 @@ pub fn start() {
                 let mut t = l.next_token();
 
                 while t.tag != Tag::EOF {
-                    print!("{}", color_it(t.tag, &input[t.span.0..t.span.1]));
+                    let tag_color = pencil[&t.tag];
+                    let literal = &input[t.span.0..t.span.1];
+
+                    print!("{}", literal.color(tag_color));
+
                     t = l.next_token();
                 }
 

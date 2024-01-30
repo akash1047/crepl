@@ -98,6 +98,7 @@ impl Lexer {
                     Tag::PLUS
                 }
             }
+            b'<' => Tag::LESS_THAN,
 
             b';' => Tag::SEMICOLON,
             b'(' => Tag::LPAREN,
