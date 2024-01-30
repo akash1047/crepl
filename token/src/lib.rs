@@ -1,14 +1,40 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+#[allow(non_camel_case_types)]
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Tag {
+    ILLEGAL,
+    EOF,
+
+    IDENT,
+    INTEGER,
+    STRING,
+
+    ASSIGN,    // =
+    PLUS,      // +
+    PLUS_PLUS, // ++
+
+    SEMICOLON, // ;
+    LPAREN,    // (
+    RPAREN,    // )
+    LBRACE,    // {
+    RBRACE,    // }
+
+    INT,
+    FOR,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Span(pub usize, pub usize);
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Token {
+    pub tag: Tag,
+    pub span: Span,
+}
+
+pub fn lookup_ident(ident: &str) -> Tag {
+    match ident {
+        "int" => Tag::INT,
+        "for" => Tag::FOR,
+        _ => Tag::IDENT,
     }
 }
