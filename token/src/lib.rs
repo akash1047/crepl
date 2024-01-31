@@ -17,6 +17,7 @@ pub enum Tag {
     MODULO,      //%
     LESS_THAN,   // <
     GREATER_THAN, // >
+
     LESS_THAN_EQUAL, // <=
     GREATER_THAN_EQUAL,  // >=
     NOT_EQUAL,     // !=
@@ -30,10 +31,9 @@ pub enum Tag {
     SHIFT_LEFT,  // <<
     SHIFT_RIGHT, // >>
     BITWISE_NOT, //~
-    INCREMENT, // ++
     DECREMENT, // --
     POINTER, //  ->*
-    ADDRESS, //&
+    //ADDRESS, //&
 
 
 
@@ -82,10 +82,12 @@ pub enum Tag {
     REGISTER,
     CONTINUE,
     //COMPOUND ASSIGN
-    INC_ASSIGN, //+=
-    DEC_ASSIGN,   //-=
+    PLUS_ASSIGN, //+= D
+    MINUS_ASSIGN,   //-=D
     DIV_ASSIGN,  ///=
-    MOD_ASSIGN,  // %=
+    MOD_ASSIGN,  // %
+    PROD_ASSIGN, // *=
+    POW, //** 
     LEFT_SHIFT_ASSIGN, // <<=
     RIGHT_SHIFT_ASSIGN,// >>=
     AND_ASSIGN,  //&=
