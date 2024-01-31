@@ -103,7 +103,7 @@ impl Lexer {
                     Tag::PLUS_ASSIGN
                 } else if self.peek_char() == b'+' {
                     self.read_char();
-                    Tag::PLUS_PLUS
+                    Tag::INCREMENT
                 } else {
                     Tag::PLUS
                 }
@@ -131,11 +131,8 @@ impl Lexer {
                 if self.peek_char() == b'=' {
                     self.read_char();
                     Tag::PROD_ASSIGN
-                } else if self.peek_char() == b'*' {
-                    self.read_char();
-                    Tag::POW
                 } else {
-                    Tag::STAR
+                    Tag::ASTERISK
                 }
             }
             b'%' => {
@@ -167,7 +164,7 @@ impl Lexer {
                     self.read_char();
                     Tag::AND_ASSIGN
                 } else {
-                    Tag::BITWISE_AND
+                    Tag::AMPERSAND
                 }
             }
             b'|' => {
@@ -178,7 +175,7 @@ impl Lexer {
                     self.read_char();
                     Tag::OR_ASSIGN
                 } else {
-                    Tag::BITWISE_OR
+                    Tag::PIPE
                 }
             }
             b'^' => {
