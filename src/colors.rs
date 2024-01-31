@@ -23,7 +23,7 @@ pub fn one_dark() -> HashMap<Tag, RGB> {
         (STRING, green),
         (ASSIGN, gray),
         (PLUS, gray),
-        (PLUS_PLUS, gray),
+        (INCREMENT, gray),
         (LESS_THAN, gray),
         (SEMICOLON, gray),
         (LPAREN, yellow),
