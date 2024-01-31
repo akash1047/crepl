@@ -12,34 +12,29 @@ pub enum Tag {
     //OPERATORS
     PLUS,        // +
     MINUS,       // -
-    STAR,        // *
+    ASTERISK,        // *
     SLASH,       // /
     MODULO,      //%
     LESS_THAN,   // <
     GREATER_THAN, // >
 
-    LESS_THAN_EQUAL, // <=
-    GREATER_THAN_EQUAL,  // >=
+    LESS_EQUAL, // <=
+    GREATER_EQUAL,  // >=
     NOT_EQUAL,     // !=
     EQUALITY,     // ==
     AND,          // &&
     OR,           // ||
     LOGICAL_NOT,  // !
-    BITWISE_AND,  // &
-    BITWISE_OR,  // |
+    AMPERSAND,  // &
+    PIPE,  // |
     BITWISE_XOR, //^
     SHIFT_LEFT,  // <<
     SHIFT_RIGHT, // >>
     BITWISE_NOT, //~
     DECREMENT, // --
-    POINTER, //  ->*
-    //ADDRESS, //&
-
-
-
-
+    ARROW, //  ->
     ASSIGN,    // =
-    PLUS_PLUS, // ++
+    INCREMENT, // ++
    //DELIMITERS
     SEMICOLON, // ;
     COMMA,     //,
@@ -87,7 +82,6 @@ pub enum Tag {
     DIV_ASSIGN,  ///=
     MOD_ASSIGN,  // %
     PROD_ASSIGN, // *=
-    POW, //** 
     LEFT_SHIFT_ASSIGN, // <<=
     RIGHT_SHIFT_ASSIGN,// >>=
     AND_ASSIGN,  //&=
