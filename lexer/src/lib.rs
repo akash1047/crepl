@@ -1,3 +1,5 @@
+pub mod ascii;
+
 use token::{Span, Tag, Token};
 
 #[derive(Default)]

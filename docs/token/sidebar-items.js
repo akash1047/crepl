@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Tag"],"fn":["lookup_ident"],"struct":["Span","Token"]};

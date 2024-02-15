@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["greeting","main"],"mod":["colors","repl"]};
