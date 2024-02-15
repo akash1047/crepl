@@ -92,7 +92,7 @@ impl Lexer {
             b'=' => {
                 if self.peek_char() == b'=' {
                     self.read_char();
-                    Tag::EQUALITY
+                    Tag::EQL
                 } else {
                     Tag::ASSIGN
                 }
@@ -103,7 +103,7 @@ impl Lexer {
                     Tag::PLUS_ASSIGN
                 } else if self.peek_char() == b'+' {
                     self.read_char();
-                    Tag::INCREMENT
+                    Tag::INC
                 } else {
                     Tag::PLUS
                 }
@@ -111,7 +111,7 @@ impl Lexer {
             b'-' => {
                 if self.peek_char() == b'-' {
                     self.read_char();
-                    Tag::DECREMENT
+                    Tag::DEC
                 } else if self.peek_char() == b'=' {
                     self.read_char();
                     Tag::MINUS_ASSIGN
@@ -130,7 +130,7 @@ impl Lexer {
             b'*' => {
                 if self.peek_char() == b'=' {
                     self.read_char();
-                    Tag::PROD_ASSIGN
+                    Tag::MUL_ASSIGN
                 } else {
                     Tag::ASTERISK
                 }
@@ -138,13 +138,12 @@ impl Lexer {
             b'%' => {
                 if self.peek_char() == b'=' {
                     self.read_char();
-                    Tag::MOD_ASSIGN
+                    Tag::REM_ASSIGN
                 } else {
-                    Tag::MODULO
+                    Tag::REM
                 }
             }
-            b'<' => Tag::LESS_THAN,
-            
+            b'<' => Tag::LT,
 
             b';' => Tag::SEMICOLON,
             b'(' => Tag::LPAREN,
@@ -153,38 +152,37 @@ impl Lexer {
             b'}' => Tag::RBRACE,
             b',' => Tag::COMMA,
             b':' => Tag::COLON,
-            b'[' => Tag::LBRACKET,
-            b']' => Tag::RBRACKET,
+            b'[' => Tag::LBRACK,
+            b']' => Tag::RBRACK,
             b'.' => Tag::DOT,
             b'&' => {
                 if self.peek_char() == b'&' {
                     self.read_char();
-                    Tag::AND
+                    Tag::LAND
                 } else if self.peek_char() == b'=' {
                     self.read_char();
                     Tag::AND_ASSIGN
                 } else {
-                    Tag::AMPERSAND
+                    Tag::AND
                 }
             }
             b'|' => {
                 if self.peek_char() == b'|' {
                     self.read_char();
-                    Tag::OR
+                    Tag::LOR
                 } else if self.peek_char() == b'=' {
                     self.read_char();
                     Tag::OR_ASSIGN
                 } else {
-                    Tag::PIPE
+                    Tag::OR
                 }
             }
             b'^' => {
                 if self.peek_char() == b'=' {
                     self.read_char();
                     Tag::XOR_ASSIGN
-                } 
-                else {
-                    Tag::BITWISE_XOR
+                } else {
+                    Tag::XOR
                 }
             }
             b'0'..=b'9' => {
@@ -194,7 +192,6 @@ impl Lexer {
                     span: Span(start, end),
                 };
             }
-        
 
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                 let (literal, end) = self.read_ident();
