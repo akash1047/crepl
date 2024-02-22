@@ -1,24 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "repl",
+    "token",
     "ast",
     "lexer", 
-    "token"
 ]
-
-
-[package]
-name = "crepl"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-lexer = { path = "lexer" }
-token = { path = "token" }
-
-rustyline = "13.0.0"
-whoami="1.4.1"
-colorful = "0.2.2"
-
