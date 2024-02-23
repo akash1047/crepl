@@ -4,6 +4,8 @@
 
 An C interpreter.
 
+![preview](./preview.gif)
+
 ## Run
 
 ```bash
@@ -14,4 +16,4 @@ cargo run
 
 ## Exiting repl
 
-press `ctrl-d` or press `ctrl-c` two times
+press `ctrl-d` or press `ctrl-c`
