@@ -128,7 +128,7 @@ impl Token {
     }
 
     pub fn is_literal(&self) -> bool {
-        *self >= Self::literal_beg && *self <= Self::literal_end
+        *self > Self::literal_beg && *self < Self::literal_end
     }
 
     pub fn is_keyword(&self) -> bool {
