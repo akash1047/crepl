@@ -41,6 +41,7 @@ impl Scanner {
             }
             self.rd_offset += 1;
             self.ch = ch;
+            self.error("Illegal Character NULL".to_string());
         } else {
             self.offset = self.src.len();
             if self.ch == b'\n' {
@@ -49,6 +50,9 @@ impl Scanner {
             }
             self.ch = 0;
         }
+    }
+    fn error(&self, msg: String) {
+        (self.err)(self.position(), msg);
     }
 
     fn peek(&self) -> u8 {
@@ -176,6 +180,15 @@ fn is_letter(c: u8) -> bool {
 
 fn is_digit(c: u8) -> bool {
     c >= b'0' && c <= b'9'
+}
+fn is_hex_digit(c: u8) -> bool {
+    c >= b'0' && c <= b'9' || c >= b'A' && c <= b'F' || c >= b'a' && c <= b'f'
+}
+fn is_octal_digit(c: u8) -> bool {
+    c >= b'0' && c <= b'7'
+}
+fn is_binary_digit(c: u8) -> bool {
+    c == b'0' || c == b'1'
 }
 
 impl IntoIterator for Scanner {
