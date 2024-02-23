@@ -18,6 +18,30 @@ pub struct App {
     redraw: bool,
 }
 
+const SIMBA: &'static str = r#"
+                   ,   __, ,
+   _.._         )\/(,-' (-' `.__
+  /_   `-.      )'_      ` _  (_    _.---._
+ // \     `-. ,'   `-.    _\`.  `.,'   ,--.\
+// -.\       `        `.  \`.   `/   ,'   ||
+|| _ `\_         ___    )  )     \  /,-'  ||
+||  `---\      ,'__ \   `,' ,--.  \/---. //
+ \\  .---`.   / /  | |      |,-.\ |`-._ //
+  `..___.'|   \ |,-| |      |_  )||\___//
+    `.____/    \\\O| |      \o)// |____/
+         /      `---/        \-'  \
+         |        ,'|,--._.--')    \
+         \       /   `n     n'\    /
+          `.   `<   .::`-,-'::.) ,'    hjw press ctrl+d to exit
+            `.   \-.____,^.   /,'
+
+              `. ;`.,-V-.-.`v'
+                \| \     ` \|\
+                 ;  `-^---^-'/
+
+                  `-.______,'
+"#;
+
 const LOGO: &'static str = r#"
    ______  _____
   / ____/ / ___ \___  ____  __
@@ -104,7 +128,8 @@ impl App {
                     },
                 )?;
 
-                Text::new("press ctrl + d to exit").draw(&mut self.stdout, inner)?;
+                // Text::new("press ctrl + d to exit").draw(&mut self.stdout, inner)?;
+                Text::new(SIMBA).draw(&mut self.stdout, inner)?;
 
                 self.stdout.flush()?;
                 self.redraw = false;
