@@ -1,46 +1,155 @@
-mod tag;
-pub use tag::Tag;
+mod maps;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Span(pub usize, pub usize);
+#[allow(non_camel_case_types)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[repr(C)]
+pub enum Token {
+    ILLEGAL,
+    EOF,
+    COMMENT,
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Token {
-    pub tag: Tag,
-    pub span: Span,
+    literal_beg,
+    IDENT,
+    INTEGER,
+    FLOATING,
+    STRING,
+    literal_end,
+
+    ASSIGN,   // =
+    PLUS,     // +
+    MINUS,    // -
+    ASTERISK, // *
+    SLASH,    // /
+    REM,      // %
+    BANG,     // !
+    TILDE,    // ~
+    AND,      // &
+    OR,       // |
+    XOR,      // ^
+    DOT,      // .
+    TERNERY,  // ?
+
+    INC,   // ++
+    DEC,   // --
+    ARROW, // ->
+
+    LT,   // <
+    GT,   // >
+    LAND, // &&
+    LOR,  // ||
+    EQL,  // ==
+    NEQ,  // !=
+    LEQ,  // <=
+    GEQ,  // >=
+
+    PLUS_ASSIGN,  // +=
+    MINUS_ASSIGN, // -=
+    MUL_ASSIGN,   // *=
+    DIV_ASSIGN,   // /=
+    REM_ASSIGN,   // %=
+    AND_ASSIGN,   // &=
+    OR_ASSIGN,    // |=
+    XOR_ASSIGN,   // ^=
+    SHL_ASSIGN,   // <<=
+    SHR_ASSIGN,   // >>=
+
+    ELLIPSIS, // ...
+
+    LPAREN, // (
+    LBRACK, // [
+    LBRACE, // {
+    COMMA,  // ,
+
+    RPAREN,    // )
+    RBRACK,    // ]
+    RBRACE,    // }
+    SEMICOLON, // ;
+    COLON,     // :
+
+    keyword_beg,
+    AUTO,
+    BREAK,
+    CASE,
+    CHAR,
+    CONST,
+    CONTINUE,
+    DEFAULT,
+    DO,
+    DOUBLE,
+    ELSE,
+    ENUM,
+    EXTERN,
+    FLOAT,
+    FOR,
+    GOTO,
+    IF,
+    INLINE,
+    INT,
+    LONG,
+    REGISTER,
+    RESTRICT,
+    RETURN,
+    SHORT,
+    SIGNED,
+    SIZEOF,
+    STATIC,
+    STRUCT,
+    SWITCH,
+    TYPEDEF,
+    UNION,
+    UNSIGNED,
+    VOID,
+    VOLATILE,
+    WHILE,
+    keyword_end,
+
+    preprocessor_beg,
+    P_IF,
+    P_ELIF,
+    P_ELSE,
+    P_ENDIF,
+    P_IFDEF,
+    P_IFNDEF,
+    P_DEFINE,
+    P_UNDEF,
+    P_INCLUDE,
+    P_LINE,
+    P_ERROR,
+    P_PRAGMA,
+    P_DEFINED,
+    preprocessor_end,
 }
 
-pub fn lookup_ident(ident: &str) -> Tag {
-    match ident {
-        "int" => Tag::INT,
-        "for" => Tag::FOR,
-        "auto" => Tag::AUTO,
-        "do" => Tag::DO,
-        "if" => Tag::IF,
-        "else" => Tag::ELSE,
-        "return" => Tag::RETURN,
-        "sizeof" => Tag::SIZEOF,
-        "while" => Tag::WHILE,
-        "char" => Tag::CHAR,
-        "const" => Tag::CONST,
-        "short" => Tag::SHORT,
-        "volatile" => Tag::VOLATILE,
-        "double" => Tag::DOUBLE,
-        "float" => Tag::FLOAT,
-        "long" => Tag::LONG,
-        "signed" => Tag::SIGNED,
-        "unsigned" => Tag::UNSIGNED,
-        "static" => Tag::STATIC,
-        "struct" => Tag::STRUCT,
-        "union" => Tag::UNION,
-        "enum" => Tag::ENUM,
-        "case" => Tag::CASE,
-        "goto" => Tag::GOTO,
-        "switch" => Tag::SWITCH,
-        "default" => Tag::DEFAULT,
-        "register" => Tag::REGISTER,
-        "break" => Tag::BREAK,
-        "continue" => Tag::CONTINUE,
-        _ => Tag::IDENT,
+impl Token {
+    pub fn to_str(&self) -> String {
+        maps::TOKENS
+            .get(self)
+            .map_or_else(|| format!("Token({})", *self as i32), |&s| s.to_owned())
+    }
+
+    pub fn is_literal(&self) -> bool {
+        *self >= Self::literal_beg && *self <= Self::literal_end
+    }
+
+    pub fn is_keyword(&self) -> bool {
+        todo!()
+    }
+
+    pub fn is_preprocessor(&self) -> bool {
+        todo!()
     }
 }
+
+pub fn lookup(ident: &str) -> Token {
+    *maps::KEYWORDS.get(ident).unwrap_or(&Token::IDENT)
+}
+
+#[derive(Debug, Clone)]
+pub struct Position {
+    pub filename: String,
+    pub offset: usize,
+    pub line: usize,
+    pub column: usize,
+}
+
+pub type Literal = String;
