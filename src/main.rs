@@ -1,5 +1,5 @@
-mod repl;
 mod colors;
+mod repl;
 
 fn main() {
     greeting("This is crepl an interpreter for C!");
