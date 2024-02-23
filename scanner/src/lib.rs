@@ -51,6 +51,10 @@ impl Scanner {
         }
     }
 
+    fn peek(&self) -> u8 {
+        *self.src.as_bytes().get(self.rd_offset).unwrap_or(&0)
+    }
+
     #[inline]
     fn skip_whitespace(&mut self) {
         while self.ch.is_ascii_whitespace() {
@@ -109,10 +113,30 @@ impl Scanner {
         }
 
         if is_digit(self.ch) {
-            let lit = self.scan_integer();
-            self.advance(lit.len());
+            // let lit = self.scan_integer();
+            // self.advance(lit.len());
+            //
+            // return (Token::INTEGER, pos, lit);
 
-            return (Token::INTEGER, pos, lit);
+            if self.ch == b'0' {
+                match self.peek() {
+                    b'b' => {
+                        // binary integer literal
+                    },
+
+                    b'x' | b'X' => {
+                        // hex integer literal
+                    }
+
+                    b'0'..=b'7' => {
+                        // octal integer litarl
+                    }
+
+                    _ => {}
+                }
+
+                // else integer literal
+            }
         }
 
         let (tok, lit) = match self.ch {

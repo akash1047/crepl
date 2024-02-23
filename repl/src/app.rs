@@ -1,4 +1,4 @@
-use std::io::{stdout, Stderr, Stdin, Stdout, Write};
+use std::io::{stdout, Stdout, Write};
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
@@ -130,6 +130,12 @@ impl Border {
         // top right corner
         writer.queue(MoveTo(surf.x, surf.width - 1))?;
         writer.queue(Print(self.2))?;
+
+        // right side
+        for j in surf.y + 1..surf.height - 1 {
+            writer.queue(MoveTo(surf.x, j))?;
+            writer.queue(Print(self.3))?;
+        }
 
         Ok(Surface {
             x: surf.x + 1,
