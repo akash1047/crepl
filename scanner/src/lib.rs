@@ -122,7 +122,7 @@ impl Scanner {
                 match self.peek() {
                     b'b' => {
                         // binary integer literal
-                    },
+                    }
 
                     b'x' | b'X' => {
                         // hex integer literal

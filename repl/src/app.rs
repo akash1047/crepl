@@ -18,6 +18,16 @@ pub struct App {
     redraw: bool,
 }
 
+const LOGO: &'static str = r#"
+   _____   _____                   _      
+  / ____| |  __ \                 | |     
+ | |      | |__) |   ___   _ __   | |     
+ | |      |  _  /   / _ \ | '_ \  | |     
+ | |____  | | \ \  |  __/ | |_) | | |____ 
+  \_____| |_|  \_\  \___| | .__/  |______|
+                          | |             
+                          |_|             "#;
+
 impl App {
     pub fn new() -> Self {
         Self {
@@ -42,18 +52,30 @@ impl App {
                     crossterm::terminal::Clear(crossterm::terminal::ClearType::All)
                 )?;
 
-                queue!(self.stdout, MoveTo(0, 0), Print("C R e p e L"))?;
-                queue!(self.stdout, MoveTo(3, 2), Print("press Ctrl+D to exit"))?;
+                // queue!(self.stdout, MoveTo(0, 0), Print("C R e p L"))?;
+                // queue!(self.stdout, MoveTo(0, 0), Print(""))?;
 
-                // Border::ASCII.draw(
-                //     &mut self.stdout,
-                //     Surface {
-                //         x: 2,
-                //         y: 2,
-                //         width: self.width,
-                //         height: self.height,
-                //     },
-                // )?;
+                Text::new(LOGO).draw(
+                    &mut self.stdout,
+                    Surface {
+                        x: 0,
+                        y: 0,
+                        width: self.width,
+                        height: self.height,
+                    },
+                )?;
+
+                let inner = Border::ROUNDED.draw(
+                    &mut self.stdout,
+                    Surface {
+                        x: 0,
+                        y: 10,
+                        width: self.width,
+                        height: self.height,
+                    },
+                )?;
+
+                Text::new("press ctrl + d to exit").draw(&mut self.stdout, inner)?;
 
                 self.stdout.flush()?;
                 self.redraw = false;
@@ -64,7 +86,11 @@ impl App {
                 match crossterm::event::read()? {
                     // closing
                     Event::Key(KeyEvent {
-                        code: KeyCode::Char('d') | KeyCode::Char('D'),
+                        code:
+                            KeyCode::Char('d')
+                            | KeyCode::Char('D')
+                            | KeyCode::Char('c')
+                            | KeyCode::Char('C'),
                         kind: KeyEventKind::Press,
                         modifiers: KeyModifiers::CONTROL,
                         ..
@@ -111,6 +137,8 @@ pub struct Border(
 
 impl Border {
     const ASCII: Border = Border('+', '-', '+', '|', '+', '-', '+', '|');
+    const ROUNDED: Border = Border('╭', '─', '╮', '│', '╯', '─', '╰', '│');
+    const YAHO: Border = Border('a', '&', 'a', 'p', 'x', 'c', 'y', 't');
 
     pub fn draw<W: QueueableCommand>(
         &self,
@@ -128,13 +156,33 @@ impl Border {
         }
 
         // top right corner
-        writer.queue(MoveTo(surf.x, surf.width - 1))?;
+        writer.queue(MoveTo(surf.width - 1, surf.y))?;
         writer.queue(Print(self.2))?;
 
         // right side
         for j in surf.y + 1..surf.height - 1 {
-            writer.queue(MoveTo(surf.x, j))?;
+            writer.queue(MoveTo(surf.width - 1, j))?;
             writer.queue(Print(self.3))?;
+        }
+
+        // bot right corner
+        writer.queue(MoveTo(surf.width - 1, surf.height - 1))?;
+        writer.queue(Print(self.4))?;
+
+        // bot line
+        for i in surf.x + 1..surf.width - 1 {
+            writer.queue(MoveTo(i, surf.height - 1))?;
+            writer.queue(Print(self.5))?;
+        }
+
+        // bot left corner
+        writer.queue(MoveTo(surf.x, surf.height - 1))?;
+        writer.queue(Print(self.6))?;
+
+        // left side
+        for j in surf.y + 1..surf.height - 1 {
+            writer.queue(MoveTo(surf.x, j))?;
+            writer.queue(Print(self.7))?;
         }
 
         Ok(Surface {
@@ -143,5 +191,32 @@ impl Border {
             width: surf.width - 1,
             height: surf.height - 1,
         })
+    }
+}
+
+pub struct Text {
+    lines: Vec<String>,
+}
+
+impl Text {
+    pub fn new(text: &str) -> Self {
+        Self {
+            lines: text.lines().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    pub fn draw<W: QueueableCommand>(&self, writer: &mut W, surf: Surface) -> std::io::Result<()> {
+        for (i, l) in self
+            .lines
+            .iter()
+            .map(|s| String::from_iter(s.chars().take(surf.width as usize)))
+            .take(surf.height as usize)
+            .enumerate()
+        {
+            writer.queue(MoveTo(surf.x, surf.y + i as u16))?;
+            writer.queue(Print(l))?;
+        }
+
+        Ok(())
     }
 }
