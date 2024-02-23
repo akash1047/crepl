@@ -1,6 +1,7 @@
 use token::{Literal, Position, Token};
 
-#[derive(Debug)]
+type ErrorHandle = Box<dyn Fn(Position, String)>;
+
 pub struct Scanner {
     filename: String,
     src: String,
@@ -11,10 +12,12 @@ pub struct Scanner {
 
     line_offset: usize,
     line_no: usize,
+
+    err: ErrorHandle,
 }
 
 impl Scanner {
-    pub fn new(filename: String, src: String) -> Self {
+    pub fn new(filename: String, src: String, err: ErrorHandle) -> Self {
         let mut s = Self {
             filename,
             src,
@@ -23,6 +26,7 @@ impl Scanner {
             rd_offset: 0,
             line_offset: 0,
             line_no: 1,
+            err,
         };
         s.next();
         s
@@ -54,6 +58,7 @@ impl Scanner {
         }
     }
 
+    #[inline]
     fn position(&self) -> Position {
         Position {
             filename: self.filename.clone(),
@@ -63,29 +68,54 @@ impl Scanner {
         }
     }
 
+    fn advance(&mut self, len: usize) {
+        self.offset += len;
+        self.rd_offset = self.offset + 1;
+        self.ch = self.src.as_bytes()[self.offset];
+    }
+
+    #[inline]
+    fn scan_ident(&self) -> Literal {
+        String::from_iter(
+            self.src.as_bytes()[self.offset..]
+                .iter()
+                .take_while(|&&c| c.is_ascii_alphanumeric() || c == b'_' || c == b'$')
+                .map(|c| *c as char),
+        )
+    }
+
+    #[inline]
+    fn scan_integer(&self) -> Literal {
+        String::from_iter(
+            self.src.as_bytes()[self.offset..]
+                .iter()
+                .take_while(|&&c| c.is_ascii_digit())
+                .map(|c| *c as char),
+        )
+    }
+
     pub fn scan(&mut self) -> (Token, Position, Literal) {
         self.skip_whitespace();
 
         let pos = self.position();
 
+        if is_letter(self.ch) && !is_digit(self.ch) {
+            let lit = self.scan_ident();
+            self.advance(lit.len());
+
+            let tok = token::lookup(lit.as_str());
+
+            return (tok, pos, lit);
+        }
+
+        if is_digit(self.ch) {
+            let lit = self.scan_integer();
+            self.advance(lit.len());
+
+            return (Token::INTEGER, pos, lit);
+        }
+
         let (tok, lit) = match self.ch {
-            b'a'..=b'z' | b'A'..=b'Z' | b'_' | b'$' => {
-                let lit = String::from_iter(
-                    self.src.as_bytes()[self.offset..]
-                        .iter()
-                        .take_while(|&&c| c.is_ascii_alphanumeric() || c == b'_' || c == b'$')
-                        .map(|c| *c as char),
-                );
-
-                self.offset += lit.len();
-                self.rd_offset = self.offset + 1;
-                self.ch = self.src.as_bytes()[self.offset];
-
-                let tok = token::lookup(lit.as_str());
-
-                return (tok, pos, lit);
-            }
-
             b'0'..=b'9' => {
                 let lit = String::from_iter(
                     self.src.as_bytes()[self.offset..]
@@ -110,6 +140,18 @@ impl Scanner {
 
         (tok, pos, lit)
     }
+}
+
+fn is_letter(c: u8) -> bool {
+    c >= b'a' && c <= b'z'
+        || c >= b'A' && c <= b'Z'
+        || c >= b'0' && c <= b'9'
+        || c == b'_'
+        || c == b'$'
+}
+
+fn is_digit(c: u8) -> bool {
+    c >= b'0' && c <= b'9'
 }
 
 impl IntoIterator for Scanner {
