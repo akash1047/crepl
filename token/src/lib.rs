@@ -132,11 +132,11 @@ impl Token {
     }
 
     pub fn is_keyword(&self) -> bool {
-        todo!()
+        *self > Self::keyword_beg && *self < Self::keyword_end
     }
 
     pub fn is_preprocessor(&self) -> bool {
-        todo!()
+        *self > Self::preprocessor_beg && *self < Self::preprocessor_end
     }
 }
 
