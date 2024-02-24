@@ -101,6 +101,37 @@ impl Scanner {
                 .map(|c| *c as char),
         )
     }
+    #[inline]
+    fn scan_binary_integer(&self) -> Literal {
+        String::from_iter(
+            self.src.as_bytes()[self.offset..]
+                .iter()
+                .take_while(|&&c| c == b'0' || c == b'1')
+                .map(|c: &u8|  *c as char),
+        )
+    }
+    #[inline]
+    fn scan_hexadecimal_integer(&self) -> Literal {
+        String::from_iter(
+            self.src.as_bytes()[self.offset..]
+                .iter()
+                .take_while(|&&c| c.is_ascii_hexdigit() )
+                .map(|c: &u8|  *c as char),
+        )
+    }
+    #[inline]
+    fn scan_octal_integer(&self) -> Literal {
+        String::from_iter(
+            self.src.as_bytes()[self.offset..]
+                .iter()
+                .take_while(|&&c| c >= b'0' && c <= b'7' )
+                .map(|c: &u8|  *c as char),
+        )
+    }
+    
+    
+
+
 
     pub fn scan(&mut self) -> (Token, Position, Literal) {
         self.skip_whitespace();
@@ -126,20 +157,40 @@ impl Scanner {
                 match self.peek() {
                     b'b' => {
                         // binary integer literal
+                        self.advance(2); // Skip "0b"
+                        let lit = self.scan_binary_integer();
+                        return (Token::BINARY, pos, lit);
+                    
                     }
 
                     b'x' | b'X' => {
                         // hex integer literal
+                        self.advance(2); // Skip "0x" or "0X"
+                        let lit = self.scan_hexadecimal_integer();
+                        return (Token::HEXADECIMAL, pos, lit);
+                    
                     }
 
                     b'0'..=b'7' => {
                         // octal integer litarl
+                        let lit = self.scan_octal_integer();
+                        return (Token::OCTAL, pos, lit);
                     }
 
-                    _ => {}
+                    _ => {
+                        let lit = self.scan_integer();
+                        self.advance(lit.len());
+                        return (Token::DECIMAL, pos, lit);
+                    }
                 }
+                } 
+                else {
+                    let lit = self.scan_integer();
+                    self.advance(lit.len());
+                    return (Token::DECIMAL, pos, lit);
 
                 // else integer literal
+            
             }
         }
 
