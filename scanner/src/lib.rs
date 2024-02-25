@@ -162,7 +162,7 @@ impl Scanner {
                     b'b' => {
                         // binary integer literal
                         let mut len =2;
-                        self.src.as_bytes()[self.offset..].iter().take_while(|&&c| c== b'0' || c == b'1')
+                        self.src.as_bytes()[self.offset + 2..].iter().take_while(|&&c| c== b'0' || c == b'1')
                         .for_each(|_|len+=1);
                     if len ==2{
                         //error expected at least one binary digit after 0b
@@ -178,7 +178,7 @@ impl Scanner {
                     b'x' | b'X' => {
                         // hex integer literal
                         let mut len =2;
-                        self.src.as_bytes()[self.offset..].iter().take_while(|&&c| c.is_ascii_hexdigit())
+                        self.src.as_bytes()[self.offset + 2..].iter().take_while(|&&c| c.is_ascii_hexdigit())
                         .for_each(|_|len+=1);
                     if len ==2{
                         //error expected at least one binary digit after 0x
