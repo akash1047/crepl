@@ -15,6 +15,7 @@ pub enum Token {
     OCTAL,
     HEXADECIMAL,
     DECIMAL,
+
     FLOATING,
     STRING,
     literal_end,
