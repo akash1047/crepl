@@ -39,9 +39,13 @@ impl Scanner {
                 self.line_offset = self.offset;
                 self.line_no += 1;
             }
+
+            if self.ch == 0 {
+                self.error(format!("invalid character null"));
+            }
+
             self.rd_offset += 1;
             self.ch = ch;
-            self.error("Illegal Character NULL".to_string());
         } else {
             self.offset = self.src.len();
             if self.ch == b'\n' {
@@ -79,7 +83,7 @@ impl Scanner {
     fn advance(&mut self, len: usize) {
         self.offset += len;
         self.rd_offset = self.offset + 1;
-        self.ch = self.src.as_bytes()[self.offset];
+        self.ch = *self.src.as_bytes().get(self.offset).unwrap_or(&0);
     }
 
     #[inline]
@@ -101,7 +105,7 @@ impl Scanner {
                 .map(|c| *c as char),
         )
     }
-   /*  #[inline]
+    /*  #[inline]
     fn scan_binary_integer(&self) -> Literal {
         String::from_iter(
             let len =2;
@@ -114,7 +118,7 @@ impl Scanner {
                 .map(|c: &u8|  *c as char),
         )
     }*/
-   /*  #[inline]
+    /*  #[inline]
     fn scan_hexadecimal_integer(&self) -> Literal {
         String::from_iter(
             self.src.as_bytes()[self.offset..]
@@ -128,14 +132,10 @@ impl Scanner {
         String::from_iter(
             self.src.as_bytes()[self.offset..]
                 .iter()
-                .take_while(|&&c| c >= b'0' && c <= b'7' )
-                .map(|c: &u8|  *c as char),
+                .take_while(|&&c| c >= b'0' && c <= b'7')
+                .map(|c: &u8| *c as char),
         )
     }
-    
-    
-
-
 
     pub fn scan(&mut self) -> (Token, Position, Literal) {
         self.skip_whitespace();
@@ -152,44 +152,50 @@ impl Scanner {
         }
 
         if is_digit(self.ch) {
-            // let lit = self.scan_integer();
-            // self.advance(lit.len());
-            //
-            // return (Token::INTEGER, pos, lit);
-
             if self.ch == b'0' {
                 match self.peek() {
                     b'b' => {
-                        // binary integer literal
-                        let mut len =2;
-                        self.src.as_bytes()[self.offset + 2..].iter().take_while(|&&c| c== b'0' || c == b'1')
-                        .for_each(|_|len+=1);
-                    if len ==2{
-                        //error expected at least one binary digit after 0b
-                        panic!("expected at least one binary digit after 0b");
-                    } 
-                    //let _lit =&self.src[self.offset..self.offset+len];
-                        
+                        let offset = self.offset;
+
+                        let mut len = 2;
+                        self.src.as_bytes()[self.offset + 2..]
+                            .iter()
+                            .take_while(|&&c| c == b'0' || c == b'1')
+                            .for_each(|_| len += 1);
+
+                        let tok = if len == 2 {
+                            self.error(format!("expcted at least one binary digit after '0b'"));
+                            Token::ILLEGAL
+                        } else {
+                            Token::BINARY
+                        };
+
                         self.advance(len);
-                        return (Token::BINARY, pos,self.src[self.offset..self.offset + len].to_string());
-                    
+                        return (tok, pos, self.src[offset..offset + len].to_string());
                     }
 
                     b'x' | b'X' => {
-                        // hex integer literal
-                        let mut len =2;
-                        self.src.as_bytes()[self.offset + 2..].iter().take_while(|&&c| c.is_ascii_hexdigit())
-                        .for_each(|_|len+=1);
-                    if len ==2{
-                        //error expected at least one binary digit after 0x
-                        panic!("expected at least one binary digit after 0x");
-                    } 
-                    //let lit =&self.src[self.offset..self.offset+len];
-                        
+                        let offset = self.offset;
+                        let mut len = 2;
+                        self.src.as_bytes()[self.offset + 2..]
+                            .iter()
+                            .take_while(|&&c| c.is_ascii_hexdigit())
+                            .for_each(|_| len += 1);
+
+                        let tok = if len == 2 {
+                            self.error(format!("expected at least one binary digit after 0x"));
+                            Token::ILLEGAL
+                        } else {
+                            Token::BINARY
+                        };
+
                         self.advance(len);
-                       
-                        return (Token::HEXADECIMAL, pos,self.src[self.offset..self.offset + len].to_string() );
-                    
+
+                        return (
+                            Token::HEXADECIMAL,
+                            pos,
+                            self.src[offset..offset + len].to_string(),
+                        );
                     }
 
                     b'0'..=b'7' => {
@@ -198,22 +204,15 @@ impl Scanner {
                         return (Token::OCTAL, pos, lit);
                     }
 
-                    _ => {
-                        let lit = self.scan_integer();
-                        self.advance(lit.len());
-                        return (Token::DECIMAL, pos, lit);
-                    }
+                    _ => {}
                 }
-                } 
-                else {
-                    let lit = self.scan_integer();
-                    self.advance(lit.len());
-                    return (Token::DECIMAL, pos, lit);
-                    
-
-                // else integer literal
-            
             }
+
+            // else integer literal
+
+            let lit = self.scan_integer();
+            self.advance(lit.len());
+            return (Token::DECIMAL, pos, lit);
         }
 
         let (tok, lit) = match self.ch {
