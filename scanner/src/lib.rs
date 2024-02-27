@@ -137,108 +137,8 @@ impl Scanner {
         )
     }
 
-    pub fn scan(&mut self) -> (Token, Position, Literal) {
-        self.skip_whitespace();
-
-        let pos = self.position();
-
-        if is_letter(self.ch) && !is_digit(self.ch) {
-            let lit = self.scan_ident();
-            self.advance(lit.len());
-
-            let tok = token::lookup(lit.as_str());
-
-            return (tok, pos, lit);
-        }
-
-        if is_digit(self.ch) {
-            if self.ch == b'0' {
-                match self.peek() {
-                    b'b' => {
-                        let offset = self.offset;
-
-                        let mut len = 2;
-                        self.src.as_bytes()[self.offset + 2..]
-                            .iter()
-                            .take_while(|&&c| c == b'0' || c == b'1')
-                            .for_each(|_| len += 1);
-
-                        let tok = if len == 2 {
-                            self.error(format!("expcted at least one binary digit after '0b'"));
-                            Token::ILLEGAL
-                        } else {
-                            Token::BINARY
-                        };
-
-                        self.advance(len);
-                        return (tok, pos, self.src[offset..offset + len].to_string());
-                    }
-
-                    b'x' | b'X' => {
-                        let offset = self.offset;
-                        let mut len = 2;
-                        self.src.as_bytes()[self.offset + 2..]
-                            .iter()
-                            .take_while(|&&c| c.is_ascii_hexdigit())
-                            .for_each(|_| len += 1);
-
-                        let tok = if len == 2 {
-                            self.error(format!("expected at least one binary digit after 0x"));
-                            Token::ILLEGAL
-                        } else {
-                            Token::BINARY
-                        };
-
-                        self.advance(len);
-
-                        return (
-                            Token::HEXADECIMAL,
-                            pos,
-                            self.src[offset..offset + len].to_string(),
-                        );
-                    }
-
-                    b'0'..=b'7' => {
-                        // octal integer litarl
-                        let lit = self.scan_octal_integer();
-                        return (Token::OCTAL, pos, lit);
-                    }
-
-                    _ => {}
-                }
-            }
-
-            // else integer literal
-
-            let lit = self.scan_integer();
-            self.advance(lit.len());
-            return (Token::DECIMAL, pos, lit);
-        }
-
-        let (tok, lit) = match self.ch {
-            b'0'..=b'9' => {
-                let lit = String::from_iter(
-                    self.src.as_bytes()[self.offset..]
-                        .iter()
-                        .take_while(|&&c| c.is_ascii_digit())
-                        .map(|c| *c as char),
-                );
-
-                self.offset += lit.len();
-                self.rd_offset = self.offset + 1;
-                self.ch = self.src.as_bytes()[self.offset];
-
-                return (Token::INTEGER, pos.clone(), lit);
-            }
-
-            b';' => (Token::SEMICOLON, (self.ch as char).to_string()),
-            0 => return (Token::EOF, pos, "".to_string()),
-            _ => (Token::ILLEGAL, (self.ch as char).to_string()),
-        };
-
-        self.next();
-
-        (tok, pos, lit)
+    pub fn scan(&mut self) -> (Token, Position, &str) {
+        todo!()
     }
 }
 
@@ -278,15 +178,144 @@ pub struct ScannerIter {
 }
 
 impl Iterator for ScannerIter {
-    type Item = (Token, Position, Literal);
+    type Item = (Token, Position, String);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let token_info = self.scanner.scan();
+        let (tok,pos,lit) = self.scanner.scan();
 
-        if token_info.0 == Token::EOF {
+        if tok == Token::EOF {
             return None;
         }
 
-        Some(token_info)
+        Some((tok, pos, lit.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use Token::*;
+
+    #[test]
+    fn test_scan() {
+        let tests = [
+            (ILLEGAL, "@"),
+            (IDENT, "intIs_32bit"),
+            (IDENT, "_Give_me_100$"),
+            (IDENT, "$"),
+            (INTEGER, "1234567890"),
+            // (INTEGER, "01234567"),
+            // (INTEGER, "0x123456790abcdefABCDEF"),
+            // (INTEGER, "0b1010"),
+            // (FLOATING, "0."),
+            // (FLOATING, ".1"),
+            // (FLOATING, "3.1"),
+            // (FLOATING, "9.e10"),
+            // (FLOATING, "9.e-10"),
+            // (FLOATING, "9.e+10"),
+            // (FLOATING, "9.1e10"),
+            // (FLOATING, "9.1e-10"),
+            // (FLOATING, "9.1e+10"),
+            // (FLOATING, ".1e10"),
+            // (FLOATING, ".1e-10"),
+            // (FLOATING, ".1e+10"),
+            // (STRING, "\"crepl\""),
+            // (STRING, "\"He said, \\\"I can eat 4 mango\\\".\""),
+            (ASSIGN, "="),
+            (ADD_ASSIGN, "+="),
+            (SUB_ASSIGN, "-="),
+            (MUL_ASSIGN, "*="),
+            (DIV_ASSIGN, "/="),
+            (REM_ASSIGN, "%="),
+            (AND_ASSIGN, "&="),
+            (OR_ASSIGN, "|="),
+            (XOR_ASSIGN, "^="),
+            (SHL_ASSIGN, "<<="),
+            (SHR_ASSIGN, ">>="),
+            (INC, "++"),
+            (DEC, "--"),
+            (PLUS, "+"),
+            (MINUS, "-"),
+            (ASTERISK, "*"),
+            (SLASH, "/"),
+            (REM, "%"),
+            (TILDE, "~"),
+            (AND, "&"),
+            (OR, "|"),
+            (XOR, "^"),
+            (SHL, "<<"),
+            (SHR, ">>"),
+            (NOT, "!"),
+            (LAND, "&&"),
+            (LOR, "||"),
+            (TERNARY, "?"),
+            (DOT, "."),
+            (ARROW, "->"),
+            (ELIPSE, "..."),
+            (COMMA, ","),
+            (SEMICOLON, ";"),
+            (COLON, ":"),
+            (LPAREN, "("),
+            (LBRACE, "{"),
+            (LBRACK, "["),
+            (RPAREN, ")"),
+            (RBRACE, "}"),
+            (RBRACK, "]"),
+            (AUTO, "auto"),
+            (BREAK, "break"),
+            (CASE, "case"),
+            (CHAR, "char"),
+            (CONST, "const"),
+            (CONTINUE, "continue"),
+            (DEFAULT, "default"),
+            (DO, "do"),
+            (DOUBLE, "double"),
+            (ELSE, "else"),
+            (ENUM, "enum"),
+            (EXTERN, "extern"),
+            (FLOAT, "float"),
+            (FOR, "for"),
+            (GOTO, "goto"),
+            (IF, "if"),
+            (INLINE, "inline"),
+            (INT, "int"),
+            (LONG, "long"),
+            (REGISTER, "register"),
+            (RESTRICT, "restrict"),
+            (RETURN, "return"),
+            (SHORT, "short"),
+            (SIGNED, "signed"),
+            (SIZEOF, "sizeof"),
+            (STATIC, "static"),
+            (STRUCT, "struct"),
+            (SWITCH, "switch"),
+            (TYPEDEF, "typedef"),
+            (UNION, "union"),
+            (UNSIGNED, "unsigned"),
+            (VOID, "void"),
+            (VOLATILE, "volatile"),
+            (WHILE, "while"),
+        ];
+
+        let source = tests
+            .iter()
+            .map(|(_, lit)| lit.to_owned())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        let mut s = Scanner::new("repl".to_string(), source.clone(), Box::new(|_, _| {}));
+
+        for (i, t) in tests.iter().enumerate() {
+            let (tok, _, lit) = s.scan();
+
+            assert_eq!(
+                *t,
+                (tok, lit),
+                "source: {}\n [{}/{}] test failed.",
+                source,
+                i + 1,
+                tests.len()
+            );
+        }
     }
 }
