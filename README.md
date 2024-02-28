@@ -16,4 +16,4 @@ cargo run
 
 ## Exiting repl
 
-press `ctrl-d` or press `ctrl-c`
+repl can't exit, ask simba for help
