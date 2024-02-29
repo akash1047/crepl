@@ -1,9 +1,8 @@
-use token::{Literal, Position, Token};
+use token::{Position, Token};
 
 type ErrorHandle = Box<dyn Fn(Position, String)>;
 
 pub struct Scanner {
-    filename: String,
     src: String,
 
     ch: u8,
@@ -17,9 +16,8 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn new(filename: String, src: String, err: ErrorHandle) -> Self {
+    pub fn new(src: String, err: ErrorHandle) -> Self {
         let mut s = Self {
-            filename,
             src,
             ch: b' ',
             offset: 0,
@@ -73,7 +71,6 @@ impl Scanner {
     #[inline]
     fn position(&self) -> Position {
         Position {
-            filename: self.filename.clone(),
             offset: self.offset,
             line: self.line_no,
             column: self.offset - self.line_offset + 1,
@@ -84,57 +81,6 @@ impl Scanner {
         self.offset += len;
         self.rd_offset = self.offset + 1;
         self.ch = *self.src.as_bytes().get(self.offset).unwrap_or(&0);
-    }
-
-    #[inline]
-    fn scan_ident(&self) -> Literal {
-        String::from_iter(
-            self.src.as_bytes()[self.offset..]
-                .iter()
-                .take_while(|&&c| c.is_ascii_alphanumeric() || c == b'_' || c == b'$')
-                .map(|c| *c as char),
-        )
-    }
-
-    #[inline]
-    fn scan_integer(&self) -> Literal {
-        String::from_iter(
-            self.src.as_bytes()[self.offset..]
-                .iter()
-                .take_while(|&&c| c.is_ascii_digit())
-                .map(|c| *c as char),
-        )
-    }
-    /*  #[inline]
-    fn scan_binary_integer(&self) -> Literal {
-        String::from_iter(
-            let len =2;
-            self.src.as_bytes()[self.offset..]
-                .iter()
-                .take_while(|&&c| c == b'0' || c == b'1')
-                .for_each(|_| len+=1);
-
-
-                .map(|c: &u8|  *c as char),
-        )
-    }*/
-    /*  #[inline]
-    fn scan_hexadecimal_integer(&self) -> Literal {
-        String::from_iter(
-            self.src.as_bytes()[self.offset..]
-                .iter()
-                .take_while(|&&c| c.is_ascii_hexdigit() )
-                .map(|c: &u8|  *c as char),
-        )
-    }*/
-    #[inline]
-    fn scan_octal_integer(&self) -> Literal {
-        String::from_iter(
-            self.src.as_bytes()[self.offset..]
-                .iter()
-                .take_while(|&&c| c >= b'0' && c <= b'7')
-                .map(|c: &u8| *c as char),
-        )
     }
 
     pub fn scan(&mut self) -> (Token, Position, &str) {
@@ -164,7 +110,7 @@ fn is_binary_digit(c: u8) -> bool {
 }
 
 impl IntoIterator for Scanner {
-    type Item = (Token, Position, Literal);
+    type Item = (Token, Position, String);
 
     type IntoIter = ScannerIter;
 
@@ -181,7 +127,7 @@ impl Iterator for ScannerIter {
     type Item = (Token, Position, String);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (tok,pos,lit) = self.scanner.scan();
+        let (tok, pos, lit) = self.scanner.scan();
 
         if tok == Token::EOF {
             return None;
@@ -222,8 +168,8 @@ mod tests {
             // (STRING, "\"crepl\""),
             // (STRING, "\"He said, \\\"I can eat 4 mango\\\".\""),
             (ASSIGN, "="),
-            (ADD_ASSIGN, "+="),
-            (SUB_ASSIGN, "-="),
+            (PLUS_ASSIGN, "+="),
+            (MINUS_ASSIGN, "-="),
             (MUL_ASSIGN, "*="),
             (DIV_ASSIGN, "/="),
             (REM_ASSIGN, "%="),
@@ -248,10 +194,10 @@ mod tests {
             (NOT, "!"),
             (LAND, "&&"),
             (LOR, "||"),
-            (TERNARY, "?"),
+            (TERNERY, "?"),
             (DOT, "."),
             (ARROW, "->"),
-            (ELIPSE, "..."),
+            (ELLIPSE, "..."),
             (COMMA, ","),
             (SEMICOLON, ";"),
             (COLON, ":"),
@@ -303,7 +249,7 @@ mod tests {
             .collect::<Vec<_>>()
             .join(" ");
 
-        let mut s = Scanner::new("repl".to_string(), source.clone(), Box::new(|_, _| {}));
+        let mut s = Scanner::new(source.clone(), Box::new(|_, _| {}));
 
         for (i, t) in tests.iter().enumerate() {
             let (tok, _, lit) = s.scan();

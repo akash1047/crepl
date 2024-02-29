@@ -11,11 +11,6 @@ pub enum Token {
     literal_beg,
     IDENT,
     INTEGER,
-    BINARY,
-    OCTAL,
-    HEXADECIMAL,
-    DECIMAL,
-
     FLOATING,
     STRING,
     literal_end,
@@ -46,6 +41,9 @@ pub enum Token {
     NEQ,  // !=
     LEQ,  // <=
     GEQ,  // >=
+    SHL,  // <<,
+    SHR,  // >>,
+    NOT,  // !,
 
     PLUS_ASSIGN,  // +=
     MINUS_ASSIGN, // -=
@@ -58,7 +56,7 @@ pub enum Token {
     SHL_ASSIGN,   // <<=
     SHR_ASSIGN,   // >>=
 
-    ELLIPSIS, // ...
+    ELLIPSE, // ...
 
     LPAREN, // (
     LBRACK, // [
@@ -149,12 +147,9 @@ pub fn lookup(ident: &str) -> Token {
     *maps::KEYWORDS.get(ident).unwrap_or(&Token::IDENT)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Position {
-    pub filename: String,
     pub offset: usize,
     pub line: usize,
     pub column: usize,
 }
-
-pub type Literal = String;

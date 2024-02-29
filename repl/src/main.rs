@@ -12,16 +12,15 @@ fn main() {
 
     let error_handle = |pos: Position, msg: String| {
         eprintln!(
-            "Syntax Error: {msg}. line {}, column {}, {}",
-            pos.line, pos.column, pos.filename
+            "Syntax Error: {msg}. line {}, column {}",
+            pos.line, pos.column
         );
     };
 
     loop {
         match rl.readline("> ") {
             Ok(line) => {
-                let scanner =
-                    Scanner::new("program.repl".into(), line.into(), Box::new(error_handle));
+                let scanner = Scanner::new(line.into(), Box::new(error_handle));
 
                 for (tok, _, lit) in scanner.into_iter() {
                     if tok.is_literal() {
