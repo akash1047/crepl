@@ -1,4 +1,4 @@
-# CREPL - C Read Evaluate Print Loop
+# CREPL - C Read Eval Print Loop
 
 ![example workflow](https://github.com/akash1047/crepl/actions/workflows/rust.yml/badge.svg)
 
