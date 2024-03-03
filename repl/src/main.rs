@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 // use app::App;
 use scanner::Scanner;
 use token::Position;

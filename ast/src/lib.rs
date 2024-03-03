@@ -6,6 +6,12 @@ pub trait Node {
     fn string(&self) -> String;
 }
 
+// int add(int x, int y) {
+//  return 0;
+// }
+//
+// add(4, "subham");
+
 pub trait Expr: Node {}
 
 pub trait Stmt: Node {}

@@ -1,5 +1,10 @@
 use token::{Position, Token};
 
+pub struct Error {
+    pub pos: Position,
+    pub msg: String,
+}
+
 type ErrorHandle = Box<dyn Fn(Position, String)>;
 
 pub struct Scanner {
@@ -83,8 +88,76 @@ impl Scanner {
         self.ch = *self.src.as_bytes().get(self.offset).unwrap_or(&0);
     }
 
+    pub fn switch(&mut self, def: Token, alt: &[(u8, Token)]) -> Token {
+        let peek = self.peek();
+
+        for (ch, tok) in alt {
+            if peek == *ch {
+                self.next();
+                return *tok;
+            }
+        }
+
+        def
+    }
+    fn expect(&mut self, ch: u8, tok: Token) -> Option<Token> {
+        if self.peek() == ch {
+            self.next();
+            return Some(tok);
+        }
+
+        None
+    }
+
     pub fn scan(&mut self) -> (Token, Position, &str) {
-        todo!()
+        self.skip_whitespace();
+
+        let pos = self.position();
+
+        if is_letter(self.ch) && !is_digit(self.ch) {
+            while is_letter(self.ch) {
+                self.next();
+            }
+            return (Token::IDENT, pos, &self.src[pos.offset..self.offset]);
+        }
+
+        if is_digit(self.ch) {
+            while is_digit(self.ch) {
+                self.next();
+            }
+            return (Token::INTEGER, pos, &self.src[pos.offset..self.offset]);
+        }
+
+        let tok = match self.ch {
+            b'=' => Token::ASSIGN,
+
+            b'+' => self.switch(
+                Token::PLUS,
+                &[(b'+', Token::INC), (b'=', Token::PLUS_ASSIGN)],
+            ),
+
+            b'-' => self.switch(
+                Token::MINUS,
+                &[
+                    (b'-', Token::DEC),
+                    (b'=', Token::MINUS_ASSIGN),
+                    (b'>', Token::ARROW),
+                ],
+            ),
+
+            b'<' => self.switch(Token::LT, &[(b'<', Token::SHL), (b'=', Token::LEQ)]),
+
+            b'*' => self.switch(Token::ASTERISK, &[(b'=', Token::MUL_ASSIGN)]),
+
+            0 => return (Token::EOF, pos, ""),
+            _ => Token::ILLEGAL,
+        };
+
+        self.next();
+
+        let lit = &self.src[pos.offset..self.offset];
+
+        (tok, pos, lit)
     }
 }
 
