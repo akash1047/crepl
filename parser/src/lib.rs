@@ -1,4 +1,4 @@
-use std::error::Error;
+use scanner::Error;
 
 use scanner::Scanner;
 use token::{Position, Token};
@@ -11,7 +11,7 @@ pub struct Parser {
     pos: Position,
     lit: String,
 
-    errors: Vec<scanner::Error>,
+    errors: Vec<Error>,
 }
 
 impl<T: AsRef<str>> From<T> for Parser {
@@ -35,12 +35,13 @@ impl Parser {
             true
         } else {
             let msg = if self.tok.is_literal() {
+                // better error message
                 format!("expected '{:?}' got '{}'", peek, &self.lit)
             } else {
                 format!("expected '{:?}' got '{:?}'", peek, self.tok)
             };
 
-            let err = scanner::Error { pos: self.pos, msg };
+            let err = Error { pos: self.pos, msg };
 
             self.errors.push(err);
 
@@ -55,12 +56,13 @@ impl Parser {
             Some(t)
         } else {
             let msg = if self.tok.is_literal() {
+                // better error message
                 format!("expected '{:?}' got '{}'", peek, &self.lit)
             } else {
                 format!("expected '{:?}' got '{:?}'", peek, self.tok)
             };
 
-            let err = scanner::Error { pos: self.pos, msg };
+            let err = Error { pos: self.pos, msg };
 
             self.errors.push(err);
             None
