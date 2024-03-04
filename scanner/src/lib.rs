@@ -109,33 +109,31 @@ impl Scanner {
 
         None
     }
-    
 
     pub fn scan(&mut self) -> (Token, Position, &str) {
         self.skip_whitespace();
 
         let pos = self.position();
-       
-    
 
         if is_letter(self.ch) && !is_digit(self.ch) {
             while is_letter(self.ch) {
                 self.next();
             }
-            return (Token::IDENT, pos, &self.src[pos.offset..self.offset]);
+
+            let lit = &self.src[pos.offset..self.offset];
+            let tok = token::lookup(lit);
+
+            return (tok, pos, lit);
         }
-        
-    
 
         if is_digit(self.ch) {
-
             while is_digit(self.ch) {
                 self.next();
             }
 
             return (Token::INTEGER, pos, &self.src[pos.offset..self.offset]);
         }
-        
+
         let tok = match self.ch {
             b'=' => Token::ASSIGN,
 
@@ -156,61 +154,77 @@ impl Scanner {
             // b'<' => self.switch(Token::LT, &[(b'<', Token::SHL), (b'=', Token::LEQ),]),
             b'<' => match self.peek() {
                 b'=' => {
-                  self.next();
-                  Token::LEQ
-                },
+                    self.next();
+                    Token::LEQ
+                }
                 b'<' => {
-                  self.next();
-                  if self.peek() == b'=' {
                     self.next();
-                    Token::SHL_ASSIGN
-                  } else {
-                     Token:: SHL 
-                   }
-                },
+                    if self.peek() == b'=' {
+                        self.next();
+                        Token::SHL_ASSIGN
+                    } else {
+                        Token::SHL
+                    }
+                }
                 _ => Token::LT,
-              }
-               b'>' => match self.peek() {
+            },
+            b'>' => match self.peek() {
                 b'=' => {
-                  self.next();
-                  Token::LEQ
-                },
-                b'>' => {
-                  self.next();
-                  if self.peek() == b'=' {
                     self.next();
-                    Token::SHR_ASSIGN
-                  } else {
-                     Token:: SHR
-                   }
-                },
+                    Token::LEQ
+                }
+                b'>' => {
+                    self.next();
+                    if self.peek() == b'=' {
+                        self.next();
+                        Token::SHR_ASSIGN
+                    } else {
+                        Token::SHR
+                    }
+                }
                 _ => Token::GT,
-              }
-              
-                
-              
-            //b'>' => self.switch(Token::GT, &[(b'<', Token::SHR), (b'=', Token::GEQ)]),
-            
+            },
 
+            //b'>' => self.switch(Token::GT, &[(b'<', Token::SHR), (b'=', Token::GEQ)]),
             b'*' => self.switch(Token::ASTERISK, &[(b'=', Token::MUL_ASSIGN)]),
             b'/' => self.switch(Token::SLASH, &[(b'=', Token::DIV_ASSIGN)]),
             b'%' => self.switch(Token::REM, &[(b'=', Token::REM_ASSIGN)]),
-            b'&' => self.switch(Token::AND, &[(b'=', Token::AND_ASSIGN)]),
-            b'|' => self.switch(Token::OR, &[(b'=', Token::OR_ASSIGN)]),
+            b'&' => self.switch(
+                Token::AND,
+                &[(b'&', Token::LAND), (b'=', Token::AND_ASSIGN)],
+            ),
+            b'|' => self.switch(Token::OR, &[(b'|', Token::LOR), (b'=', Token::OR_ASSIGN)]),
             b'^' => self.switch(Token::XOR, &[(b'=', Token::XOR_ASSIGN)]),
-            b'?' => Token:: TERNERY,
-            b',' => Token:: COMMA,
-            b';' => Token:: SEMICOLON,
-            b':' => Token:: COLON,
-            b'(' => Token:: LPAREN,
-            b')' => Token:: RPAREN,
-            b'{' => Token:: RBRACE,
-            b'}' => Token:: LBRACE,
-            b'[' => Token:: RBRACK,
-            b']' => Token:: LBRACK,
-            
-            
-           
+            b'!' => self.switch(Token::NOT, &[(b'=', Token::NEQ)]),
+
+            b'.' => {
+                if self.peek() == b'.' {
+                    self.next();
+
+                    if self.peek() == b'.' {
+                        self.next();
+                        Token::ELLIPSE
+                    } else {
+                        Token::ILLEGAL
+                    }
+                } else {
+                    Token::DOT
+                }
+            }
+
+            b'~' => Token::TILDE,
+
+            b'?' => Token::TERNERY,
+            b',' => Token::COMMA,
+            b';' => Token::SEMICOLON,
+            b':' => Token::COLON,
+            b'(' => Token::LPAREN,
+            b')' => Token::RPAREN,
+            b'{' => Token::LBRACE,
+            b'}' => Token::RBRACE,
+            b'[' => Token::LBRACK,
+            b']' => Token::RBRACK,
+
             0 => return (Token::EOF, pos, ""),
             _ => Token::ILLEGAL,
         };
