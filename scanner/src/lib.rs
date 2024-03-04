@@ -1,3 +1,5 @@
+use std::path::Prefix;
+
 use token::{Position, Token};
 
 pub struct Error {
@@ -81,7 +83,6 @@ impl Scanner {
             column: self.offset - self.line_offset + 1,
         }
     }
-
     fn advance(&mut self, len: usize) {
         self.offset += len;
         self.rd_offset = self.offset + 1;
@@ -108,11 +109,14 @@ impl Scanner {
 
         None
     }
+    
 
     pub fn scan(&mut self) -> (Token, Position, &str) {
         self.skip_whitespace();
 
         let pos = self.position();
+       
+    
 
         if is_letter(self.ch) && !is_digit(self.ch) {
             while is_letter(self.ch) {
@@ -120,14 +124,18 @@ impl Scanner {
             }
             return (Token::IDENT, pos, &self.src[pos.offset..self.offset]);
         }
+        
+    
 
         if is_digit(self.ch) {
+
             while is_digit(self.ch) {
                 self.next();
             }
+
             return (Token::INTEGER, pos, &self.src[pos.offset..self.offset]);
         }
-
+        
         let tok = match self.ch {
             b'=' => Token::ASSIGN,
 
@@ -145,10 +153,64 @@ impl Scanner {
                 ],
             ),
 
-            b'<' => self.switch(Token::LT, &[(b'<', Token::SHL), (b'=', Token::LEQ)]),
+            // b'<' => self.switch(Token::LT, &[(b'<', Token::SHL), (b'=', Token::LEQ),]),
+            b'<' => match self.peek() {
+                b'=' => {
+                  self.next();
+                  Token::LEQ
+                },
+                b'<' => {
+                  self.next();
+                  if self.peek() == b'=' {
+                    self.next();
+                    Token::SHL_ASSIGN
+                  } else {
+                     Token:: SHL 
+                   }
+                },
+                _ => Token::LT,
+              }
+               b'>' => match self.peek() {
+                b'=' => {
+                  self.next();
+                  Token::LEQ
+                },
+                b'>' => {
+                  self.next();
+                  if self.peek() == b'=' {
+                    self.next();
+                    Token::SHR_ASSIGN
+                  } else {
+                     Token:: SHR
+                   }
+                },
+                _ => Token::GT,
+              }
+              
+                
+              
+            //b'>' => self.switch(Token::GT, &[(b'<', Token::SHR), (b'=', Token::GEQ)]),
+            
 
             b'*' => self.switch(Token::ASTERISK, &[(b'=', Token::MUL_ASSIGN)]),
-
+            b'/' => self.switch(Token::SLASH, &[(b'=', Token::DIV_ASSIGN)]),
+            b'%' => self.switch(Token::REM, &[(b'=', Token::REM_ASSIGN)]),
+            b'&' => self.switch(Token::AND, &[(b'=', Token::AND_ASSIGN)]),
+            b'|' => self.switch(Token::OR, &[(b'=', Token::OR_ASSIGN)]),
+            b'^' => self.switch(Token::XOR, &[(b'=', Token::XOR_ASSIGN)]),
+            b'?' => Token:: TERNERY,
+            b',' => Token:: COMMA,
+            b';' => Token:: SEMICOLON,
+            b':' => Token:: COLON,
+            b'(' => Token:: LPAREN,
+            b')' => Token:: RPAREN,
+            b'{' => Token:: RBRACE,
+            b'}' => Token:: LBRACE,
+            b'[' => Token:: RBRACK,
+            b']' => Token:: LBRACK,
+            
+            
+           
             0 => return (Token::EOF, pos, ""),
             _ => Token::ILLEGAL,
         };
@@ -223,9 +285,9 @@ mod tests {
             (IDENT, "_Give_me_100$"),
             (IDENT, "$"),
             (INTEGER, "1234567890"),
-            // (INTEGER, "01234567"),
-            // (INTEGER, "0x123456790abcdefABCDEF"),
-            // (INTEGER, "0b1010"),
+            //(INTEGER, "01234567"),
+            //(INTEGER, "0x123456790abcdefABCDEF"),
+            //(INTEGER, "0b1010"),
             // (FLOATING, "0."),
             // (FLOATING, ".1"),
             // (FLOATING, "3.1"),
