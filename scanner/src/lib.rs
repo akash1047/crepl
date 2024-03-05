@@ -1,5 +1,11 @@
 use token::Token;
 
+pub struct LineInfo {
+    pub offset: usize,
+    pub line: usize,
+    pub column: usize,
+}
+
 pub struct Scanner {
     src: String,
 
@@ -69,6 +75,32 @@ impl Scanner {
         }
 
         def
+    }
+
+    pub fn line_info(&self) -> Vec<LineInfo> {
+        let mut li = Vec::with_capacity(self.lines.len());
+
+        self.lines
+            .iter()
+            .enumerate()
+            .zip(self.lines.iter().skip(1))
+            .for_each(|((i, s), e)| {
+                li.push(LineInfo {
+                    offset: *s,
+                    line: i + 1,
+                    column: *e - *s,
+                })
+            });
+
+        if let Some(i) = self.lines.last() {
+            li.push(LineInfo {
+                offset: *i,
+                line: self.lines.len(),
+                column: self.src.len() - i,
+            });
+        }
+
+        li
     }
 
     pub fn scan(&mut self) -> Result<(Token, usize, &str), (Token, usize, &str, String)> {
