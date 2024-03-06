@@ -1,114 +1,148 @@
-use scanner::Error;
-
 use scanner::Scanner;
-use token::{Position, Token};
+use token::Token;
 
+#[derive(Default, Debug)]
 pub struct Parser {
     scanner: Scanner,
 
-    // The next token
     tok: Token,
-    pos: Position,
+    pos: usize,
     lit: String,
 
-    errors: Vec<Error>,
+    errors: Vec<(usize, String)>,
 }
 
-impl<T: AsRef<str>> From<T> for Parser {
-    fn from(source: T) -> Self {
-        todo!()
+impl From<String> for Parser {
+    fn from(src: String) -> Self {
+        Self::from(Scanner::from(src))
+    }
+}
+
+impl From<Scanner> for Parser {
+    fn from(scanner: Scanner) -> Self {
+        let mut p = Self {
+            scanner,
+            ..Self::default()
+        };
+        p.next();
+        p
     }
 }
 
 impl Parser {
     fn next(&mut self) {
-        let (tok, pos, lit) = self.scanner.scan();
+        loop {
+            match self.scanner.scan() {
+                Ok((tok, pos, lit)) => {
+                    self.tok = tok;
+                    self.pos = pos;
+                    self.lit = lit.to_string();
 
-        self.tok = tok;
-        self.pos = pos;
-        self.lit = lit.to_string();
-    }
-
-    fn expect(&mut self, peek: Token) -> bool {
-        if peek == self.tok {
-            self.next();
-            true
-        } else {
-            let msg = if self.tok.is_literal() {
-                // better error message
-                format!("expected '{:?}' got '{}'", peek, &self.lit)
-            } else {
-                format!("expected '{:?}' got '{:?}'", peek, self.tok)
-            };
-
-            let err = Error { pos: self.pos, msg };
-
-            self.errors.push(err);
-
-            false
-        }
-    }
-
-    fn expect2(&mut self, peek: Token) -> Option<(Token, Position, String)> {
-        if peek == self.tok {
-            let t = (self.tok, self.pos, self.lit.clone());
-            self.next();
-            Some(t)
-        } else {
-            let msg = if self.tok.is_literal() {
-                // better error message
-                format!("expected '{:?}' got '{}'", peek, &self.lit)
-            } else {
-                format!("expected '{:?}' got '{:?}'", peek, self.tok)
-            };
-
-            let err = Error { pos: self.pos, msg };
-
-            self.errors.push(err);
-            None
-        }
-    }
-
-    fn parse_program(&mut self) -> Vec<Box<dyn ast::Stmt>> {
-        let mut stmts = Vec::new();
-
-        while self.tok != Token::EOF {
-            if let Some(stmt) = self.parse_stmt() {
-                stmts.push(stmt);
+                    break;
+                }
+                Err((_, pos, _, msg)) => {
+                    self.errors.push((pos, msg));
+                }
             }
         }
-
-        stmts
     }
 
-    fn parse_stmt(&mut self) -> Option<Box<dyn ast::Stmt>> {
+    fn expect(&mut self, t: Token) {
+        if self.tok == t {
+            self.next();
+        } else {
+            let msg = if self.tok.is_literal() {
+                format!("expected {}, got '{}'", t.to_str(), self.lit)
+            } else {
+                format!("expected {}, got {}", t.to_str(), self.tok.to_str())
+            };
+
+            self.errors.push((self.pos, msg));
+        }
+    }
+
+    fn parse_break_stmt(&mut self) -> ast::BreakStmt {
+        let pos = self.pos;
+        self.expect(Token::SEMICOLON);
+        ast::BreakStmt { pos }
+    }
+
+    fn parse_continue_stmt(&mut self) -> ast::ContinueStmt {
+        let pos = self.pos;
+        self.expect(Token::SEMICOLON);
+        ast::ContinueStmt { pos }
+    }
+
+    fn parse_ident(&mut self) -> ast::Ident {
+        let pos = self.pos;
+        let name = self.lit.clone();
+
+        self.next();
+
+        ast::Ident { pos, name }
+    }
+
+    fn parse_expr(&mut self) -> Option<Box<dyn ast::Expr>> {
+        None
+    }
+
+    fn parse_basic_lit(&mut self) -> ast::BasicLit {
+        let tok = self.tok;
+        let pos = self.pos;
+        let lit = self.lit.clone();
+
+        self.next();
+
+        ast::BasicLit { pos, tok, lit }
+    }
+
+    fn parse_operand(&mut self) -> Option<Box<dyn ast::Expr>> {
         match self.tok {
-            Token::BREAK => Some(Box::new(self.parse_break_stmt()?)),
-            Token::CONTINUE => Some(Box::new(self.parse_continue_stmt()?)),
+            Token::IDENT => Some(Box::new(self.parse_ident())),
 
-            _ => todo!(""),
+            Token::PLUS | Token::MINUS => {
+                eprintln!("PARSING UNARY EXPRESSION");
+                let op_pos = self.pos;
+                let op = self.tok;
+
+                self.next();
+
+                let x = self.parse_operand()?;
+
+                Some(Box::new(ast::UnaryExpr { op_pos, op, x }))
+            }
+
+            Token::INTEGER | Token::FLOATING | Token::STRING => {
+                Some(Box::new(self.parse_basic_lit()))
+            }
+
+            _ => todo!(),
         }
     }
+}
 
-    fn parse_break_stmt(&mut self) -> Option<ast::BreakStmt> {
-        let stmt = ast::BreakStmt { pos: self.pos };
-        self.next();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        if !self.expect(Token::SEMICOLON) {
-            return None;
+    #[test]
+    fn test_parse_operand() {
+        let source = "-1 +2 x 12 - - - 3";
+
+        let tests = ["(-1)", "(+2)", "x", "12", "(-(-(-3)))"];
+
+        let mut p = Parser::from(source.to_string());
+
+        for (i, t) in tests.iter().enumerate() {
+            let x = p.parse_operand().unwrap();
+
+            assert_eq!(
+                *t,
+                x.string(),
+                "[{}/{}] test case failed.",
+                i + 1,
+                tests.len()
+            );
         }
-
-        Some(stmt)
-    }
-
-    fn parse_continue_stmt(&mut self) -> Option<ast::ContinueStmt> {
-        let stmt = ast::ContinueStmt { pos: self.pos };
-        self.next();
-
-        if !self.expect(Token::SEMICOLON) {
-            return None;
-        }
-
-        Some(stmt)
     }
 }

@@ -1,10 +1,12 @@
 mod maps;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[repr(C)]
 pub enum Token {
+    #[default]
     ILLEGAL,
+
     EOF,
     COMMENT,
 

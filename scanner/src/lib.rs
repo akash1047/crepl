@@ -6,6 +6,7 @@ pub struct LineInfo {
     pub column: usize,
 }
 
+#[derive(Debug, Default)]
 pub struct Scanner {
     src: String,
 
@@ -61,7 +62,7 @@ impl Scanner {
         let offset = (self.offset + len).min(self.src.len());
         self.offset = offset;
         self.rd_offset = self.offset + 1;
-        self.ch = self.src.as_bytes()[offset];
+        self.ch = *self.src.as_bytes().get(offset).unwrap_or(&0);
     }
 
     fn switch(&mut self, def: Token, alts: &[(u8, Token)]) -> Token {
@@ -132,7 +133,7 @@ impl Scanner {
 
                         if digits == 0 {
                             let msg = format!(
-                                "at least one binary digit required after 0'{}'",
+                                "at least one binary digit required after '0{}'",
                                 prefix as char
                             );
                             return Err((Token::ILLEGAL, pos, lit, msg));
@@ -149,7 +150,7 @@ impl Scanner {
 
                         if digits == 0 {
                             let msg = format!(
-                                "at least one hex digit required after 0'{}'",
+                                "at least one hex digit required after '0{}'",
                                 prefix as char
                             );
                             return Err((Token::ILLEGAL, pos, lit, msg));

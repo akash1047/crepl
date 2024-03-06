@@ -1,16 +1,10 @@
-use token::Position;
+use token::Token;
 
 pub trait Node {
-    fn start(&self) -> Position;
-    // fn end(&self) -> Position;
+    fn start(&self) -> usize;
+    // fn end(&self) -> usize;
     fn string(&self) -> String;
 }
-
-// int add(int x, int y) {
-//  return 0;
-// }
-//
-// add(4, "subham");
 
 pub trait Expr: Node {}
 
@@ -19,20 +13,20 @@ pub trait Stmt: Node {}
 pub trait Decl: Node {}
 
 pub struct ReturnStmt {
-    pub pos: Position,                // position of the 'return' keyword
+    pub pos: usize,                   // position of the 'return' keyword
     pub value: Option<Box<dyn Expr>>, // the return value
 }
 
 pub struct BreakStmt {
-    pub pos: Position, // position of the 'break' keyword
+    pub pos: usize, // position of the 'break' keyword
 }
 
 pub struct ContinueStmt {
-    pub pos: Position, // position of the 'continue' keyword
+    pub pos: usize, // position of the 'continue' keyword
 }
 
 impl Node for ReturnStmt {
-    fn start(&self) -> Position {
+    fn start(&self) -> usize {
         self.pos
     }
 
@@ -48,7 +42,7 @@ impl Node for ReturnStmt {
 }
 
 impl Node for BreakStmt {
-    fn start(&self) -> Position {
+    fn start(&self) -> usize {
         self.pos
     }
 
@@ -58,7 +52,7 @@ impl Node for BreakStmt {
 }
 
 impl Node for ContinueStmt {
-    fn start(&self) -> Position {
+    fn start(&self) -> usize {
         self.pos
     }
 
@@ -72,3 +66,70 @@ impl Node for ContinueStmt {
 impl Stmt for ReturnStmt {}
 impl Stmt for BreakStmt {}
 impl Stmt for ContinueStmt {}
+
+pub struct BasicLit {
+    pub pos: usize,
+    pub tok: Token,
+    pub lit: String,
+}
+
+pub struct UnaryExpr {
+    pub op_pos: usize,
+    pub op: Token,
+    pub x: Box<dyn Expr>,
+}
+
+pub struct Ident {
+    pub pos: usize,
+    pub name: String,
+}
+
+pub struct StarExpr {
+    pub pos: usize,
+    pub x: Box<dyn Expr>,
+}
+
+impl Node for BasicLit {
+    fn start(&self) -> usize {
+        self.pos
+    }
+
+    fn string(&self) -> String {
+        self.lit.clone()
+    }
+}
+
+impl Node for UnaryExpr {
+    fn start(&self) -> usize {
+        self.op_pos
+    }
+
+    fn string(&self) -> String {
+        format!("({}{})", self.op.to_str(), self.x.string())
+    }
+}
+
+impl Node for Ident {
+    fn start(&self) -> usize {
+        self.pos
+    }
+
+    fn string(&self) -> String {
+        self.name.clone()
+    }
+}
+
+impl Node for StarExpr {
+    fn start(&self) -> usize {
+        self.pos
+    }
+
+    fn string(&self) -> String {
+        format!("(*{})", self.x.string())
+    }
+}
+
+impl Expr for BasicLit {}
+impl Expr for UnaryExpr {}
+impl Expr for Ident {}
+impl Expr for StarExpr {}
