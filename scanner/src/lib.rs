@@ -198,12 +198,59 @@ impl Scanner {
                 Token::AND,
                 &[(b'=', Token::AND_ASSIGN), (b'&', Token::LAND)],
             ),
-
+            b'~' => Token::TILDE,
+            b'?' => Token::TERNERY,
+            b'.' => Token::DOT,
             b'=' => self.switch(Token::ASSIGN, &[(b'=', Token::EQL)]),
-            b'|' => self.switch(Token::OR, &[(b'=', Token::OR_ASSIGN)]),
+            b'|' => self.switch(Token::OR, &[(b'=', Token::OR_ASSIGN), (b'|', Token::LOR)]),
             b'^' => self.switch(Token::XOR, &[(b'=', Token::XOR_ASSIGN)]),
+            b'!' => self.switch(Token::NOT, &[(b'=', Token::NEQ)]),
+            b'<' => match self.peek() {
+                b'=' => {
+                    self.next();
+                    Token::LEQ
+                }
+                b'<' => {
+                    self.next();
+
+                    match self.peek() {
+                        b'=' => {
+                            self.next();
+                            Token::SHL_ASSIGN
+                        }
+                        _ => Token::SHL,
+                    }
+                }
+                _ => Token::LT,
+            },
+
+            b'>' => match self.peek() {
+                b'=' => {
+                    self.next();
+                    Token::GEQ
+                }
+                b'>' => {
+                    self.next();
+                    match self.peek() {
+                        b'=' => {
+                            self.next();
+                            Token::SHR_ASSIGN
+                        }
+                        _ => Token::SHR,
+                    }
+                }
+                _ => Token::GT,
+            },
 
             b';' => Token::SEMICOLON,
+            b',' => Token::COMMA,
+            b'(' => Token::LPAREN,
+            b')' => Token::RPAREN,
+            b'{' => Token::LBRACE,
+            b'}' => Token::RBRACE,
+            b'[' => Token::LBRACK,
+            b']' => Token::RBRACK,
+            b':' => Token::COLON,
 
             0 => return Ok((Token::EOF, pos, "")),
             _ => {
@@ -292,6 +339,12 @@ mod tests {
             (XOR_ASSIGN, "^="),
             (SHL_ASSIGN, "<<="),
             (SHR_ASSIGN, ">>="),
+            (EQL, "=="),
+            (LT, "<"),
+            (GT, ">"),
+            (NEQ, "!="),
+            (LEQ, "<="),
+            (GEQ, ">="),
             (INC, "++"),
             (DEC, "--"),
             (PLUS, "+"),
@@ -311,7 +364,7 @@ mod tests {
             (TERNERY, "?"),
             (DOT, "."),
             (ARROW, "->"),
-            (ELLIPSE, "..."),
+            //(ELLIPSE, "..."),
             (COMMA, ","),
             (SEMICOLON, ";"),
             (COLON, ":"),
