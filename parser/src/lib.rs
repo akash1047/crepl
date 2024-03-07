@@ -81,9 +81,25 @@ impl Parser {
 
         ast::Ident { pos, name }
     }
+    // - - 4     + . -3;
+    // (-(-4)) + (-3)
 
     fn parse_expr(&mut self) -> Option<Box<dyn ast::Expr>> {
-        None
+        let x = self.parse_operand()?;
+        match self.tok {
+            Token::PLUS | Token::MINUS | Token::ASTERISK | Token::SLASH => {
+                let op_pos = self.pos;
+                let op = self.tok;
+
+                self.next();
+
+                let y = self.parse_expr()?;
+
+                Some(Box::new(ast::InfixExpr { x, op_pos, op, y }))
+            }
+
+            _ => Some(x),
+        }
     }
 
     fn parse_basic_lit(&mut self) -> ast::BasicLit {
@@ -98,10 +114,16 @@ impl Parser {
 
     fn parse_operand(&mut self) -> Option<Box<dyn ast::Expr>> {
         match self.tok {
-            Token::IDENT => Some(Box::new(self.parse_ident())),
+            Token::IDENT => {
+                let pos = self.pos;
+                let name = self.lit.clone();
+
+                self.next();
+
+                Some(Box::new(ast::Ident { pos, name }))
+            }
 
             Token::PLUS | Token::MINUS => {
-                eprintln!("PARSING UNARY EXPRESSION");
                 let op_pos = self.pos;
                 let op = self.tok;
 
@@ -113,7 +135,13 @@ impl Parser {
             }
 
             Token::INTEGER | Token::FLOATING | Token::STRING => {
-                Some(Box::new(self.parse_basic_lit()))
+                let pos = self.pos;
+                let tok = self.tok;
+                let lit = self.lit.clone();
+
+                self.next();
+
+                Some(Box::new(ast::BasicLit { pos, tok, lit }))
             }
 
             _ => todo!(),
@@ -126,15 +154,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_operand() {
-        let source = "-1 +2 x 12 - - - 3";
+    fn test_parse_expr() {
+        let source = "-1 +2 + x 12 - - - 3";
 
-        let tests = ["(-1)", "(+2)", "x", "12", "(-(-(-3)))"];
+        // (((-1) + 2) + x)
+        // (12 - (-(-3)))
+
+        // let tests = ["(-1)", "(+2)", "x", "12", "(-(-(-3)))"];
+        let tests = ["((-1) + (2 + x))", "(12 - (-(-3)))"];
 
         let mut p = Parser::from(source.to_string());
 
         for (i, t) in tests.iter().enumerate() {
-            let x = p.parse_operand().unwrap();
+            let x = p.parse_expr().unwrap();
 
             assert_eq!(
                 *t,

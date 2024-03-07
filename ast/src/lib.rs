@@ -79,6 +79,13 @@ pub struct UnaryExpr {
     pub x: Box<dyn Expr>,
 }
 
+pub struct InfixExpr {
+    pub x: Box<dyn Expr>,
+    pub op_pos: usize,
+    pub op: Token, // +, -, *, /
+    pub y: Box<dyn Expr>,
+}
+
 pub struct Ident {
     pub pos: usize,
     pub name: String,
@@ -129,7 +136,23 @@ impl Node for StarExpr {
     }
 }
 
+impl Node for InfixExpr {
+    fn start(&self) -> usize {
+        self.x.start()
+    }
+
+    fn string(&self) -> String {
+        format!(
+            "({} {} {})",
+            self.x.string(),
+            self.op.to_str(),
+            self.y.string()
+        )
+    }
+}
+
 impl Expr for BasicLit {}
 impl Expr for UnaryExpr {}
 impl Expr for Ident {}
 impl Expr for StarExpr {}
+impl Expr for InfixExpr {}
