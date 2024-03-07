@@ -1,3 +1,4 @@
+
 use token::Token;
 
 pub trait Node {
@@ -12,6 +13,70 @@ pub trait Stmt: Node {}
 
 pub trait Decl: Node {}
 
+pub struct SemiColonStmt {
+    pub pos: usize,
+}
+pub struct ExprStmt {
+    pub x: Box<dyn Expr>,
+}
+
+pub struct IncDecStmt {
+    pub pos: usize,
+    pub op: Token,
+    pub id: Ident,
+}
+
+pub struct AssignStmt {
+    pub lhs: Ident,
+    pub pos: usize,
+    pub op: Token,
+    pub rhs: Ident,
+}
+
+pub struct BlockStmt {
+    pub lbrace: usize,
+    pub rbrace: usize,
+    pub stmts: Vec<Box<dyn Stmt>>,
+}
+
+pub struct IfStmt {
+    pub if_pos: usize,
+    pub lbrace: usize,
+    pub cond: Box<dyn Expr>,
+    pub init: Box<dyn Stmt>,
+    pub elifs: Vec<ElseIf>,
+    pub _else: Option<Else>,
+}
+
+pub struct ElseIf {
+    pub else_pos: usize,
+    pub if_pos: usize,
+    pub lbrace_pos: usize,
+    pub cond: Box<dyn Expr>,
+    pub rbrace_pos: usize,
+    pub init: Box<dyn Stmt>,
+}
+pub struct Else {
+    pub pos: usize,
+    pub init: Box<dyn Stmt>,
+}
+
+pub struct WhileStmt {
+    pub pos: usize,
+    pub lbrace_pos: usize,
+    pub cond: Box<dyn Expr>,
+    pub rbrace_pos: usize,
+    pub init: Box<dyn Expr>,
+}
+
+pub struct DowhileStmt {
+    pub do_pos: usize,
+    pub init: Box<dyn Stmt>,
+    pub while_pos: usize,
+    pub lbrace_pos: usize,
+    pub cond: Box<dyn Expr>,
+    pub rbrace_pos: usize,
+}
 pub struct ReturnStmt {
     pub pos: usize,                   // position of the 'return' keyword
     pub value: Option<Box<dyn Expr>>, // the return value
