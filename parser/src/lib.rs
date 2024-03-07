@@ -87,7 +87,25 @@ impl Parser {
     fn parse_expr(&mut self) -> Option<Box<dyn ast::Expr>> {
         let x = self.parse_operand()?;
         match self.tok {
-            Token::PLUS | Token::MINUS | Token::ASTERISK | Token::SLASH => {
+            Token::PLUS
+            | Token::MINUS
+            | Token::ASTERISK
+            | Token::SLASH
+            | Token::REM
+            | Token::AND
+            | Token::OR
+            | Token::XOR
+            | Token::SHL
+            | Token::SHR
+            | Token::LAND
+            | Token::LOR
+            | Token::EQL
+            | Token::NEQ
+            | Token::LT
+            | Token::GT
+            | Token::LEQ
+            | Token::GEQ => {
+                //parsing infix operation
                 let op_pos = self.pos;
                 let op = self.tok;
 
@@ -159,7 +177,7 @@ mod tests {
 
         // (((-1) + 2) + x)
         // (12 - (-(-3)))
-
+        //(12/6)
         // let tests = ["(-1)", "(+2)", "x", "12", "(-(-(-3)))"];
         let tests = ["((-1) + (2 + x))", "(12 - (-(-3)))"];
 
@@ -176,5 +194,26 @@ mod tests {
                 tests.len()
             );
         }
+    }
+}
+
+#[test]
+fn test_parse_expr1() {
+    let source = "12 / 3";
+    //(12 / 3)
+    let tests = ["(12 / 3)"];
+
+    let mut p = Parser::from(source.to_string());
+
+    for (i, t) in tests.iter().enumerate() {
+        let x = p.parse_expr().unwrap();
+
+        assert_eq!(
+            *t,
+            x.string(),
+            "[{}/{}] test case failed.",
+            i + 1,
+            tests.len()
+        );
     }
 }
