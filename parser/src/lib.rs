@@ -61,10 +61,94 @@ impl Parser {
         }
     }
 
-    fn parse_break_stmt(&mut self) -> ast::BreakStmt {
-        let pos = self.pos;
-        self.expect(Token::SEMICOLON);
-        ast::BreakStmt { pos }
+    fn parse_stmt(&mut self) -> Option<Box<dyn ast::Stmt>> {
+        Some(match self.tok {
+            Token::BREAK => {
+                let pos = self.pos;
+                self.next();
+
+                if self.tok != Token::SEMICOLON {
+                    return None;
+                }
+
+                let semi = self.pos;
+                self.next();
+
+                Box::new(ast::BreakStmt { pos, semi })
+            }
+
+            Token::RETURN => {
+                let pos = self.pos;
+                self.next();
+
+                let value = self.parse_expr();
+
+                if self.tok != Token::SEMICOLON {
+                    return None;
+                }
+                let semi = self.pos;
+                self.next();
+
+                Box::new(ast::ReturnStmt { pos, value, semi })
+            }
+
+            Token::IF => {
+                let if_pos = self.pos;
+                self.next();
+
+                let lbrace_pos = self.pos;
+                self.next();
+
+                let cond = self.parse_expr()?;
+
+                let rbrace_pos = self.pos;
+                self.next();
+
+                let init = self.parse_stmt()?;
+
+                Box::new(ast::IfStmt {
+                    if_pos,
+                    lbrace_pos,
+                    cond,
+                    rbrace_pos,
+                    init,
+                })
+            }
+
+            Token::LBRACE => {
+                let mut stmts = Vec::new();
+
+                let lbrace = self.pos;
+                self.next();
+
+                // {
+                //   break;
+                //   return 0;
+                //   {
+                //     break;
+                //     return ;
+                //   }
+                // }
+
+                loop {
+                    match self.parse_stmt() {
+                        Some(s) => stmts.push(s),
+                        None => break,
+                    }
+                }
+
+                let rbrace = self.pos;
+                self.next();
+
+                Box::new(ast::BlockStmt {
+                    lbrace,
+                    stmts,
+                    rbrace,
+                })
+            }
+
+            _ => return None,
+        })
     }
 
     fn parse_continue_stmt(&mut self) -> ast::ContinueStmt {
@@ -162,7 +246,7 @@ impl Parser {
                 Some(Box::new(ast::BasicLit { pos, tok, lit }))
             }
 
-            _ => todo!(),
+            _ => None,
         }
     }
 }
@@ -195,25 +279,77 @@ mod tests {
             );
         }
     }
-}
 
-#[test]
-fn test_parse_expr1() {
-    let source = "12 / 3";
-    //(12 / 3)
-    let tests = ["(12 / 3)"];
+    #[test]
+    fn test_parse_expr1() {
+        let source = "12 / 3";
+        //(12 / 3)
+        let tests = ["(12 / 3)"];
 
-    let mut p = Parser::from(source.to_string());
+        let mut p = Parser::from(source.to_string());
 
-    for (i, t) in tests.iter().enumerate() {
-        let x = p.parse_expr().unwrap();
+        for (i, t) in tests.iter().enumerate() {
+            let x = p.parse_expr().unwrap();
 
-        assert_eq!(
-            *t,
-            x.string(),
-            "[{}/{}] test case failed.",
-            i + 1,
-            tests.len()
-        );
+            assert_eq!(
+                *t,
+                x.string(),
+                "[{}/{}] test case failed.",
+                i + 1,
+                tests.len()
+            );
+        }
+    }
+
+    #[test]
+    fn test_stmt() {
+        let source = "
+break   ;
+return
+
+
+;
+
+return 69         ;
+
+if (1)
+  return 1 + 2;
+
+if (age >= 18) {
+    if (age <= 21) return 0;
+
+    return 1;
+}";
+
+        let tests = [
+            "break;",
+            "return;",
+            "return 69;",
+            "if (1) return (1 + 2);",
+            "if ((age >= 18)) {
+\tif ((age <= 21)) return 0;
+\treturn 1;
+}",
+            // if (age >= 18) {
+            //    if (age <= 21) {
+            //        return 0;
+            //    }
+            //    return 1;
+            // }
+        ];
+
+        let mut p = Parser::from(source.to_string());
+
+        for (i, t) in tests.iter().enumerate() {
+            let x = p.parse_stmt().unwrap();
+
+            assert_eq!(
+                *t,
+                x.string(),
+                "[{}/{}] test case failed.",
+                i + 1,
+                tests.len()
+            );
+        }
     }
 }

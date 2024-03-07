@@ -1,4 +1,3 @@
-
 use token::Token;
 
 pub trait Node {
@@ -35,17 +34,18 @@ pub struct AssignStmt {
 
 pub struct BlockStmt {
     pub lbrace: usize,
-    pub rbrace: usize,
     pub stmts: Vec<Box<dyn Stmt>>,
+    pub rbrace: usize,
 }
 
 pub struct IfStmt {
     pub if_pos: usize,
-    pub lbrace: usize,
+    pub lbrace_pos: usize,
     pub cond: Box<dyn Expr>,
+    pub rbrace_pos: usize,
     pub init: Box<dyn Stmt>,
-    pub elifs: Vec<ElseIf>,
-    pub _else: Option<Else>,
+    // pub elifs: Vec<ElseIf>,
+    // pub _else: Option<Else>,
 }
 
 pub struct ElseIf {
@@ -80,10 +80,12 @@ pub struct DowhileStmt {
 pub struct ReturnStmt {
     pub pos: usize,                   // position of the 'return' keyword
     pub value: Option<Box<dyn Expr>>, // the return value
+    pub semi: usize,
 }
 
 pub struct BreakStmt {
-    pub pos: usize, // position of the 'break' keyword
+    pub pos: usize,  // position of the 'break' keyword
+    pub semi: usize, // position of the ';'
 }
 
 pub struct ContinueStmt {
@@ -126,11 +128,41 @@ impl Node for ContinueStmt {
     }
 }
 
+impl Node for IfStmt {
+    fn start(&self) -> usize {
+        self.if_pos
+    }
+
+    fn string(&self) -> String {
+        format!("if ({}) {}", self.cond.string(), self.init.string())
+    }
+}
+
+impl Node for BlockStmt {
+    fn start(&self) -> usize {
+        self.lbrace
+    }
+
+    fn string(&self) -> String {
+        let mut s = String::from("{\n");
+
+        for stmt in self.stmts.iter() {
+            s.push_str(format!("\t{}\n", stmt.string()).as_str());
+        }
+
+        s.push_str("}");
+
+        s
+    }
+}
+
 // mark all the statement nodes
 
 impl Stmt for ReturnStmt {}
 impl Stmt for BreakStmt {}
 impl Stmt for ContinueStmt {}
+impl Stmt for IfStmt {}
+impl Stmt for BlockStmt {}
 
 pub struct BasicLit {
     pub pos: usize,
