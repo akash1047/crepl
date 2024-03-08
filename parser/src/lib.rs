@@ -1,3 +1,5 @@
+use std::usize;
+
 use scanner::Scanner;
 use token::Token;
 
@@ -61,6 +63,26 @@ impl Parser {
         }
     }
 
+    fn expect2(&mut self, look_ahead: Token) -> Option<(Token, usize, String)> {
+        if self.tok == look_ahead {
+            let (tok, pos, lit) = (self.tok, self.pos, self.lit.clone());
+            self.next();
+            Some((tok, pos, lit))
+        } else {
+            // while (34535 == 4 { 2 = 12; }
+            // expected ')' got 'INTEGER'
+            let msg = if self.tok.is_literal() {
+                format!("expected {}, got '{}'", look_ahead.to_str(), self.lit)
+            } else {
+                format!("expected {}, got {}", look_ahead.to_str(), self.tok.to_str())
+            };
+
+            self.errors.push((self.pos, msg));
+
+            None
+        }
+    }
+
     fn parse_stmt(&mut self) -> Option<Box<dyn ast::Stmt>> {
         Some(match self.tok {
             Token::BREAK => {
@@ -93,26 +115,11 @@ impl Parser {
             }
 
             Token::IF => {
-                let if_pos = self.pos;
-                self.next();
+                Box::new(self.parse_if_stmt()?)
+            }
 
-                let lbrace_pos = self.pos;
-                self.next();
-
-                let cond = self.parse_expr()?;
-
-                let rbrace_pos = self.pos;
-                self.next();
-
-                let init = self.parse_stmt()?;
-
-                Box::new(ast::IfStmt {
-                    if_pos,
-                    lbrace_pos,
-                    cond,
-                    rbrace_pos,
-                    init,
-                })
+            Token::WHILE => {
+                Box::new(self.parse_while_stmt()?)
             }
 
             Token::LBRACE => {
@@ -149,6 +156,72 @@ impl Parser {
 
             _ => return None,
         })
+    }
+
+    fn parse_if_stmt(&mut self) -> Option<ast::IfStmt>{
+        let if_pos: usize = self.pos;
+        self.next();
+
+    
+        let (_, lparen_pos, _) = self.expect2(Token::LPAREN)?;
+
+        let cond = self.parse_expr()?;
+
+        let(_, rparen_pos, _) = self.expect2(Token::RPAREN)?;
+
+        let init  = self.parse_stmt()?;
+
+        let mut elifs: Vec<ast::ElseIf> = Vec::new();
+
+        loop {
+            if self.tok != Token::ELSE {
+                break;
+            }
+            let else_pos = self.pos;
+
+            if self.tok != Token::IF {
+                break;
+            }
+
+            let if_pos: usize = self.pos;
+            self.next();
+
+    
+            let (_, lparen_pos, _) = self.expect2(Token::LPAREN)?;
+
+            let cond = self.parse_expr()?;
+
+            let(_, rparen_pos, _) = self.expect2(Token::RPAREN)?;
+
+            let init  = self.parse_stmt()?;
+
+            elifs.push( ast::ElseIf {else_pos, if_pos, lparen_pos, cond, rparen_pos, init })
+        }
+
+        let _else = if self.tok == Token::ELSE {
+            let pos = self.pos;
+            let init = self.parse_stmt()?;
+
+            Some(ast::Else { pos, init })
+        } else { None };
+
+        Some(ast::IfStmt {if_pos , lparen_pos , cond , rparen_pos , init, elifs, _else})
+
+    }
+
+    fn parse_while_stmt(&mut self) -> Option<ast::WhileStmt> {
+        let pos = self.pos;
+        self.next();
+
+        let (_, lparen_pos, _) = self.expect2(Token::LPAREN)?;
+
+        let cond = self.parse_expr()?;
+
+        let (_, rparen_pos, _) = self.expect2(Token::RPAREN)?;
+
+        let init = self.parse_stmt()?;
+
+        Some(ast::WhileStmt { pos, lparen_pos, cond, rparen_pos, init })
     }
 
     fn parse_continue_stmt(&mut self) -> ast::ContinueStmt {
@@ -312,24 +385,13 @@ return
 
 return 69         ;
 
-if (1)
-  return 1 + 2;
-
-if (age >= 18) {
-    if (age <= 21) return 0;
-
-    return 1;
-}";
+";
 
         let tests = [
             "break;",
             "return;",
             "return 69;",
-            "if (1) return (1 + 2);",
-            "if ((age >= 18)) {
-\tif ((age <= 21)) return 0;
-\treturn 1;
-}",
+           
             // if (age >= 18) {
             //    if (age <= 21) {
             //        return 0;

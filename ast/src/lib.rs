@@ -40,20 +40,20 @@ pub struct BlockStmt {
 
 pub struct IfStmt {
     pub if_pos: usize,
-    pub lbrace_pos: usize,
+    pub lparen_pos: usize,
     pub cond: Box<dyn Expr>,
-    pub rbrace_pos: usize,
+    pub rparen_pos: usize,
     pub init: Box<dyn Stmt>,
-    // pub elifs: Vec<ElseIf>,
-    // pub _else: Option<Else>,
+    pub elifs: Vec<ElseIf>,
+    pub _else: Option<Else>,
 }
 
 pub struct ElseIf {
     pub else_pos: usize,
     pub if_pos: usize,
-    pub lbrace_pos: usize,
+    pub lparen_pos: usize,
     pub cond: Box<dyn Expr>,
-    pub rbrace_pos: usize,
+    pub rparen_pos: usize,
     pub init: Box<dyn Stmt>,
 }
 pub struct Else {
@@ -63,10 +63,10 @@ pub struct Else {
 
 pub struct WhileStmt {
     pub pos: usize,
-    pub lbrace_pos: usize,
+    pub lparen_pos: usize,
     pub cond: Box<dyn Expr>,
-    pub rbrace_pos: usize,
-    pub init: Box<dyn Expr>,
+    pub rparen_pos: usize,
+    pub init: Box<dyn Stmt>,
 }
 
 pub struct DowhileStmt {
@@ -134,7 +134,17 @@ impl Node for IfStmt {
     }
 
     fn string(&self) -> String {
-        format!("if ({}) {}", self.cond.string(), self.init.string())
+        let mut s = format!("if ({}) {}", self.cond.string(), self.init.string());
+
+        for elif in &self.elifs {
+            s.push_str(format!("else if ({}) {}", elif.cond.string(), elif.init.string()).as_str());
+        }
+
+        if let Some(_else) = &self._else {
+            s.push_str(format!("else {}", _else.init.string()).as_str());
+        }
+
+        s
     }
 }
 
@@ -156,6 +166,15 @@ impl Node for BlockStmt {
     }
 }
 
+impl Node for WhileStmt {
+    fn start(&self) -> usize {
+        self.pos
+    }
+    fn string(&self) -> String {
+        format!("while ({}) {}", self.cond.string(), self.init.string())
+    }
+}
+
 // mark all the statement nodes
 
 impl Stmt for ReturnStmt {}
@@ -163,6 +182,7 @@ impl Stmt for BreakStmt {}
 impl Stmt for ContinueStmt {}
 impl Stmt for IfStmt {}
 impl Stmt for BlockStmt {}
+impl Stmt for WhileStmt {}
 
 pub struct BasicLit {
     pub pos: usize,
