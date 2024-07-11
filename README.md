@@ -2,7 +2,7 @@
 
 ![example workflow](https://github.com/akash1047/crepl/actions/workflows/rust.yml/badge.svg)
 
-An C interpreter.
+A C interpreter.
 
 ![preview](./preview.gif)
 
